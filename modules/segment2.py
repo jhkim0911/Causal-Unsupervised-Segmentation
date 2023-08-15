@@ -27,7 +27,15 @@ class SmallSegment(nn.Module):
         feat = self.f1(drop(feat)) + self.f2(drop(feat))
         return Segment2.untransform(feat)
     
-
+class SmallSegment2(nn.Module):
+    def __init__(self, func):
+        super().__init__()
+        self.f = func
+        
+    def forward(self, feat, drop=nn.Identity()):
+        feat = Segment2.transform(feat)
+        feat = self.f(drop(feat))
+        return Segment2.untransform(feat)
     
 class TransformerDecoder(nn.Module):
 
@@ -199,8 +207,8 @@ class Segment2(nn.Module):
         ##################################################################################
         # For Effective contrastive with EMA
         # projection head
-        self.projection_head = SmallSegment(self.reduced_dim, self.projection_dim)
-        self.projection_head_ema = SmallSegment(self.reduced_dim, self.projection_dim)
+        self.projection_head = SmallSegment2(nn.Conv2d(self.reduced_dim, self.projection_dim, kernel_size=1))
+        self.projection_head_ema = SmallSegment2(nn.Conv2d(self.reduced_dim, self.projection_dim, kernel_size=1))
         ##################################################################################
 
 
@@ -297,7 +305,7 @@ class Segment2(nn.Module):
         self.flat_norm_bank_proj_feat_ema = F.normalize(bank_proj_feat_ema, dim=1)
 
 
-    def contrastive_ema_with_codebook_bank(self, feat, proj_feat, proj_feat_ema, temp=0.07, pos_thresh=0.3, neg_thresh=0.1):
+    def contrastive_ema_with_codebook_bank(self, feat, proj_feat, proj_feat_ema, temp=0.07, pos_thresh=0.3, neg_thresh=0.3):
         """
         get all anchors and positive samples with same codebook index
         """

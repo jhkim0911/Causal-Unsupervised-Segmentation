@@ -263,7 +263,7 @@ if __name__ == "__main__":
     parser.add_argument('--data_dir', default='/mnt/hard2/lbk-iccv/datasets/', type=str)
     parser.add_argument('--dataset', default='cocostuff27', type=str)
     parser.add_argument('--ckpt', default='checkpoint/dino_vit_small_8.pth', type=str)
-    parser.add_argument('--epoch', default=3, type=int)
+    parser.add_argument('--epoch', default=5, type=int)
     parser.add_argument('--distributed', default=True, type=str2bool)
     parser.add_argument('--load_Best', default=True, type=str2bool)
     parser.add_argument('--load_Fine', default=False, type=str2bool)

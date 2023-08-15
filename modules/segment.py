@@ -20,6 +20,16 @@ class SmallSegment(nn.Module):
         feat = self.f1(drop(feat)) + self.f2(drop(feat))
         return Segment.untransform(feat)
 
+class SmallSegment2(nn.Module):
+    def __init__(self, func):
+        super().__init__()
+        self.f = func
+        
+    def forward(self, feat, drop=nn.Identity()):
+        feat = Segment.transform(feat)
+        feat = self.f(drop(feat))
+        return Segment.untransform(feat)
+
 class Segment(nn.Module):
     def __init__(self, args):
         super(Segment, self).__init__()
@@ -59,8 +69,8 @@ class Segment(nn.Module):
         ##################################################################################
         # For Effective contrastive with EMA
         # projection head
-        self.projection_head = SmallSegment(self.reduced_dim, self.projection_dim)
-        self.projection_head_ema = SmallSegment(self.reduced_dim, self.projection_dim)
+        self.projection_head = SmallSegment2(nn.Conv2d(self.reduced_dim, self.projection_dim, kernel_size=1))
+        self.projection_head_ema = SmallSegment2(nn.Conv2d(self.reduced_dim, self.projection_dim, kernel_size=1))
         ##################################################################################
 
 
