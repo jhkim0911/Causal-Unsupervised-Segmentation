@@ -1,8 +1,8 @@
-dataset="cityscapes"
+dataset="cocostuff27"
 train_gpu="4,5,6,7"
 test_gpu="4"
 ckpt="checkpoint/dino_vit_base_8.pth"
-port="12301"
+port="12302"
 # CNN
 # python train_front_door.py --dataset $dataset --ckpt $ckpt --gpu $train_gpu --port $port && python fine_tuning.py --dataset $dataset --ckpt $ckpt --gpu $train_gpu --port $port && python test.py --dataset $dataset --ckpt $ckpt --gpu $test_gpu
 

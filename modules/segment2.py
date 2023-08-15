@@ -10,7 +10,7 @@ from torch import Tensor
 from typing import Optional
 
 
-class SmallSegment(nn.Module):
+class HeadSegment(nn.Module):
     def __init__(self, dim, reduced_dim):
         super().__init__()
         self.dim = dim
@@ -27,14 +27,14 @@ class SmallSegment(nn.Module):
         feat = self.f1(drop(feat)) + self.f2(drop(feat))
         return Segment2.untransform(feat)
     
-class SmallSegment2(nn.Module):
+class ProjectionSegment(nn.Module):
     def __init__(self, func):
         super().__init__()
         self.f = func
         
-    def forward(self, feat, drop=nn.Identity()):
+    def forward(self, feat):
         feat = Segment2.transform(feat)
-        feat = self.f(drop(feat))
+        feat = self.f(feat)
         return Segment2.untransform(feat)
     
 class TransformerDecoder(nn.Module):
@@ -149,7 +149,7 @@ class Decoder(nn.Module):
                                                 nn.LayerNorm(args.dim))
         
         # small segment
-        self.f = SmallSegment(args.dim, args.reduced_dim)
+        self.f = HeadSegment(args.dim, args.reduced_dim)
 
         # interpolation
         self.interp = lambda x, y: Segment2.untransform(
@@ -207,8 +207,8 @@ class Segment2(nn.Module):
         ##################################################################################
         # For Effective contrastive with EMA
         # projection head
-        self.projection_head = SmallSegment2(nn.Conv2d(self.reduced_dim, self.projection_dim, kernel_size=1))
-        self.projection_head_ema = SmallSegment2(nn.Conv2d(self.reduced_dim, self.projection_dim, kernel_size=1))
+        self.projection_head = ProjectionSegment(nn.Conv2d(self.reduced_dim, self.projection_dim, kernel_size=1))
+        self.projection_head_ema = ProjectionSegment(nn.Conv2d(self.reduced_dim, self.projection_dim, kernel_size=1))
         ##################################################################################
 
 

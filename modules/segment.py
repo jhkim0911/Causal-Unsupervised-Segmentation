@@ -5,9 +5,9 @@ import torch.nn as nn
 from torch import cat
 import math
 
-class SmallSegment(nn.Module):
+class HeadSegment(nn.Module):
     def __init__(self, dim, reduced_dim):
-        super(SmallSegment, self).__init__()
+        super().__init__()
         self.dim = dim
         self.reduced_dim = reduced_dim
         self.f1 = torch.nn.Sequential(nn.Conv2d(self.dim, self.reduced_dim, (1, 1)))
@@ -20,14 +20,14 @@ class SmallSegment(nn.Module):
         feat = self.f1(drop(feat)) + self.f2(drop(feat))
         return Segment.untransform(feat)
 
-class SmallSegment2(nn.Module):
+class ProjectionSegment(nn.Module):
     def __init__(self, func):
         super().__init__()
         self.f = func
         
-    def forward(self, feat, drop=nn.Identity()):
+    def forward(self, feat):
         feat = Segment.transform(feat)
-        feat = self.f(drop(feat))
+        feat = self.f(feat)
         return Segment.untransform(feat)
 
 class Segment(nn.Module):
@@ -58,8 +58,8 @@ class Segment(nn.Module):
         ##################################################################################
         # segmentation head
         # linear/non-linear projection
-        self.head = SmallSegment(self.dim, self.reduced_dim)
-        self.head_ema = SmallSegment(self.dim, self.reduced_dim)
+        self.head = HeadSegment(self.dim, self.reduced_dim)
+        self.head_ema = HeadSegment(self.dim, self.reduced_dim)
 
         # dropout
         self.dropout = torch.nn.Dropout(p=0.1)
@@ -69,8 +69,8 @@ class Segment(nn.Module):
         ##################################################################################
         # For Effective contrastive with EMA
         # projection head
-        self.projection_head = SmallSegment2(nn.Conv2d(self.reduced_dim, self.projection_dim, kernel_size=1))
-        self.projection_head_ema = SmallSegment2(nn.Conv2d(self.reduced_dim, self.projection_dim, kernel_size=1))
+        self.projection_head = ProjectionSegment(nn.Conv2d(self.reduced_dim, self.projection_dim, kernel_size=1))
+        self.projection_head_ema = ProjectionSegment(nn.Conv2d(self.reduced_dim, self.projection_dim, kernel_size=1))
         ##################################################################################
 
 
@@ -167,7 +167,7 @@ class Segment(nn.Module):
         self.flat_norm_bank_proj_feat_ema = F.normalize(bank_proj_feat_ema, dim=1)
 
 
-    def contrastive_ema_with_codebook_bank(self, feat, proj_feat, proj_feat_ema, temp=0.07, pos_thresh=0.3, neg_thresh=0.1):
+    def contrastive_ema_with_codebook_bank(self, feat, proj_feat, proj_feat_ema, temp=0.07, pos_thresh=0.3, neg_thresh=0.3):
         """
         get all anchors and positive samples with same codebook index
         """

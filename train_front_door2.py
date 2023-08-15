@@ -61,13 +61,13 @@ def train(args, net, segment, train_loader, optimizer, writer, rank):
             ######################################################################
             # teacher
             seg_feat_ema = segment.head_ema(feat, drop=segment.dropout)
-            proj_feat_ema = segment.projection_head_ema(seg_feat_ema, drop=segment.dropout)
+            proj_feat_ema = segment.projection_head_ema(seg_feat_ema)
             ######################################################################
 
             ######################################################################
             # student
             seg_feat = segment.head(feat, drop=segment.dropout)
-            proj_feat = segment.projection_head(seg_feat, drop=segment.dropout)
+            proj_feat = segment.projection_head(seg_feat)
             ######################################################################
 
             ######################################################################
@@ -361,7 +361,7 @@ if __name__ == "__main__":
 
     # decoder parameters
     parser.add_argument('--nhead', default=1, type=int)
-    parser.add_argument('--num_decoder_layers', default=3, type=int)
+    parser.add_argument('--num_decoder_layers', default=1, type=int)
 
     args = parser.parse_args()
 
