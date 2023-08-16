@@ -94,30 +94,32 @@ you can download them in the following links:
 ## CUSS Framework (Top-Level File Directory Layout) 
     .
     ├── loader
-    │   ├── netloader.py               # Self-Supervised Pretrained Model Loader & Segmentation Head Loader
-    │   └── stego_dataloader.py        # Dataloader Thanks to STEGO [ICLR 2022]
+    │   ├── netloader.py                # Self-Supervised Pretrained Model Loader & Segmentation Head Loader
+    │   └── stego_dataloader.py         # Dataloader Thanks to STEGO [ICLR 2022]
     │
     ├── models                          # Model Design of Self-Supervised Pretrained: [DINO/Moco-v3/MAE]
-    │   ├── dinomaevit.pyt              # ViT Structure of DINO and MAE
-    │   ├── dinov2vit.pyt               # ViT Structure of DINOv2
+    │   ├── dinomaevit.py               # ViT Structure of DINO and MAE
+    │   ├── dinov2vit.py                # ViT Structure of DINOv2
     │   └── mocov3vit.py                # ViT Structure of Moco-v3
     │
     ├── modules                         # Segmentation Head and Its Necessary Function
     │   └── segment.py                  # [CNN] Including Tools with Generating Concept Book and Contrastive Learning
-    │   └── segment2.py                  # [DETR] Including Tools with Generating Concept Book and Contrastive Learning
+    │   └── segment2.py                 # [DETR] Including Tools with Generating Concept Book and Contrastive Learning
     │
     ├── utils
     │   └── utils.py                    # Utility for auxiliary tools
     │
-    ├── train_modularity.py             # (STEP 1) [CNN] Generating Concept Cluster Book as a Mediator
-    ├── train_front_door.py             # (STEP 2) [CNN] Frontdoor Adjustment through Unsupervised Semantic Segmentation
-    ├── fine_tuning.py                  # (STEP 3) [CNN] Fine-Tuning Cluster Probe
-    ├── test.py                         # [CNN] Evaluating Unsupervised Semantic Segmantation Performance (Post-Processing)
+    ├── train_modularity.py             # (STEP 1) [CNN & DETR] Generating Concept Cluster Book as a Mediator
     │
-    ├── train_modularity2.py             # (STEP 1) [DETR] Generating Concept Cluster Book as a Mediator
-    ├── train_front_door2.py             # (STEP 2) [DETR] Frontdoor Adjustment through Unsupervised Semantic Segmentation
-    ├── fine_tuning2.py                  # (STEP 3) [DETR] Fine-Tuning Cluster Probe
-    ├── test2.py                         # [DETR] Evaluating Unsupervised Semantic Segmantation Performance (Post-Processing)
+    ├── train_front_door_cnn.py         # (STEP 2) [CNN] Frontdoor Adjustment through Unsupervised Semantic Segmentation
+    ├── fine_tuning_cnn.py              # (STEP 3) [CNN] Fine-Tuning Cluster Probe
+    │
+    ├── train_front_door_detr.py        # (STEP 2) [DETR] Frontdoor Adjustment through Unsupervised Semantic Segmentation
+    ├── fine_tuning_detr.py             # (STEP 3) [DETR] Fine-Tuning Cluster Probe
+    │
+    ├── test_cnn.py                     # [CNN] Evaluating Unsupervised Semantic Segmantation Performance (Post-Processing)
+    ├── test_detr.py                    # [DETR] Evaluating Unsupervised Semantic Segmantation Performance (Post-Processing)
+    │
     ├── requirements.txt
     └── README.md
 
