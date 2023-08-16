@@ -215,6 +215,9 @@ def main(rank, args, ngpus_per_node):
         # Interrupt for sync GPU Process
         if args.distributed: dist.barrier()
 
+    # Closing DDP
+    if args.distributed: dist.barrier(); dist.destroy_process_group()
+
 if __name__ == "__main__":
 
     # fetch args
