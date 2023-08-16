@@ -148,10 +148,18 @@ class Decoder(nn.Module):
         
         # small segment
         self.f = HeadSegment(args.dim, args.reduced_dim)
+
+        # interpolation
+        self.interp = lambda x, y: Segment2.untransform(
+            F.interpolate(
+            Segment2.transform(x), 
+            size=(int(math.sqrt(y)), int(math.sqrt(y))), 
+            mode='bilinear'
+            ))
         
     def forward(self, feat, drop=nn.Identity()):        
         discrete_query = Segment2.vqt(feat, self.codebook)
-        batch_query_embed = discrete_query + self.pos_embed.unsqueeze(0).repeat(feat.shape[0], 1, 1)
+        batch_query_embed = discrete_query + self.interp(self.pos_embed.unsqueeze(0), feat.shape[1]).repeat(feat.shape[0], 1, 1)
         head_feat = self.head(batch_query_embed.transpose(0, 1), feat.transpose(0, 1)).transpose(0, 1)
         return self.f(head_feat, drop)
 
