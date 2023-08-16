@@ -1,6 +1,6 @@
 from utils.utils import *
-from modules.segment import Segment_CNN
-from modules.segment2 import Segment_DETR
+from modules.segment_cnn import Segment_CNN
+from modules.segment_detr import Segment_DETR
 from torch.nn.parallel import DistributedDataParallel
 
 def network_loader(args, rank=0):
