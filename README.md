@@ -94,8 +94,8 @@ you can download them in the following links:
     │   └── mocov3vit.py                # ViT Structure of Moco-v3
     │
     ├── modules                         # Segmentation Head and Its Necessary Function
-    │   └── segment.py                  # [CNN] Including Tools with Generating Concept Book and Contrastive Learning
-    │   └── segment2.py                 # [DETR] Including Tools with Generating Concept Book and Contrastive Learning
+    │   └── segment_cnn.py              # [CNN] Including Tools with Generating Concept Book and Contrastive Learning
+    │   └── segment_detr.py             # [DETR] Including Tools with Generating Concept Book and Contrastive Learning
     │
     ├── utils
     │   └── utils.py                    # Utility for auxiliary tools
@@ -133,14 +133,14 @@ ckpt="checkpoint/dino_vit_base_8.pth" # checkpoint root (/checkpoint) and its fi
 port=$(($RANDOM%100+1200)) # DDP port number
 
 # CNN
-python train_front_door.py --dataset $dataset --ckpt $ckpt --gpu $train_gpu --port $port && python fine_tuning.py --dataset $dataset --ckpt $ckpt --gpu $train_gpu --port $port && python test.py --dataset $dataset --ckpt $ckpt --gpu $test_gpu
+python train_front_door_cnn.py --dataset $dataset --ckpt $ckpt --gpu $train_gpu --port $port && python fine_tuning_cnn.py --dataset $dataset --ckpt $ckpt --gpu $train_gpu --port $port && python test_cnn.py --dataset $dataset --ckpt $ckpt --gpu $test_gpu
 
 # DETR
-python train_front_door2.py --dataset $dataset --ckpt $ckpt --gpu $train_gpu --port $port && python fine_tuning2.py --dataset $dataset --ckpt $ckpt --gpu $train_gpu --port $port && python test2.py --dataset $dataset --ckpt $ckpt --gpu $test_gpu
+python train_front_door_detr.py --dataset $dataset --ckpt $ckpt --gpu $train_gpu --port $port && python fine_tuning_detr.py --dataset $dataset --ckpt $ckpt --gpu $train_gpu --port $port && python test_detr.py --dataset $dataset --ckpt $ckpt --gpu $test_gpu
 
 # only test (if you want to only run test for evaluation, then you can uncomment it and run it)
-# python test.py --dataset $dataset --ckpt $ckpt --gpu $test_gpu
-# python test2.py --dataset $dataset --ckpt $ckpt --gpu $test_gpu
+# python test_cnn.py --dataset $dataset --ckpt $ckpt --gpu $test_gpu
+# python test_detr.py --dataset $dataset --ckpt $ckpt --gpu $test_gpu
 ```
 
 
@@ -155,16 +155,18 @@ python train_mediator.py # DINO/DINOv2/MoCov3/MAE
 ### (STEP 2): Frontdoor Adjustment through Contrastive Learning
 
 ```shell script
-python train_front_door.py # CNN
-python train_front_door2.py # DETR
+python train_front_door_cnn.py # CNN
+# or
+python train_front_door_detr.py # DETR
 ```
 
 
 ### (STEP 3):  *Technical STEP: Fine-Tuning Cluster Probe*
 
 ```shell script
-python fine_tuning.py # CNN
-python fine_tuning2.py # DETR
+python fine_tuning_cnn.py # CNN
+# or
+python fine_tuning_detr.py # DETR
 ```
 
 ---
@@ -172,8 +174,9 @@ python fine_tuning2.py # DETR
 ### 2. Testing CUSS
 
 ```shell script
-python test.py # CNN
-python test2.py # DETR
+python test_cnn.py # CNN
+# or
+python test_detr.py # DETR
 ```
 
 ---

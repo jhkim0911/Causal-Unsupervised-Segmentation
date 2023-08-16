@@ -9,11 +9,11 @@ port=$(($RANDOM%100+1200))
 
 
 # CNN
-python train_front_door.py --dataset $dataset --ckpt $ckpt --gpu $train_gpu --port $port && python fine_tuning.py --dataset $dataset --epoch $epoch --ckpt $ckpt --gpu $train_gpu --port $port && python test.py --dataset $dataset --ckpt $ckpt --gpu $test_gpu
+python train_front_door_cnn.py --dataset $dataset --ckpt $ckpt --gpu $train_gpu --port $port && python fine_tuning_cnn.py --dataset $dataset --epoch $epoch --ckpt $ckpt --gpu $train_gpu --port $port && python test_cnn.py --dataset $dataset --ckpt $ckpt --gpu $test_gpu
 
 # DETR
-# python train_front_door2.py --dataset $dataset --ckpt $ckpt --gpu $train_gpu --port $port && python fine_tuning2.py --epoch $epoch --dataset $dataset --ckpt $ckpt --gpu $train_gpu --port $port && python test2.py --dataset $dataset --ckpt $ckpt --gpu $test_gpu
+# python train_front_door_detr.py --dataset $dataset --ckpt $ckpt --gpu $train_gpu --port $port && python fine_tuning_detr.py --epoch $epoch --dataset $dataset --ckpt $ckpt --gpu $train_gpu --port $port && python test_detr.py --dataset $dataset --ckpt $ckpt --gpu $test_gpu
 
 # only test
-# python test.py --dataset $dataset --ckpt $ckpt --gpu $test_gpu
-# python test2.py --dataset $dataset --ckpt $ckpt --gpu $test_gpu
+# python test_cnn.py --dataset $dataset --ckpt $ckpt --gpu $test_gpu
+# python test_detr.py --dataset $dataset --ckpt $ckpt --gpu $test_gpu
