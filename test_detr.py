@@ -321,12 +321,12 @@ if __name__ == "__main__":
 
     if 'small' in args.ckpt:
         args.dim=384
-        args.reduced_dim=90
+        args.reduced_dim=70
         args.projection_dim=2048
         args.num_queries=args.train_resolution**2 // int(args.ckpt.split('_')[-1].split('.')[0])**2
     elif 'base' in args.ckpt:
         args.dim=768
-        args.reduced_dim=90
+        args.reduced_dim=70
         args.projection_dim=2048
         args.num_queries=args.train_resolution**2 // int(args.ckpt.split('_')[-1].split('.')[0])**2
 
