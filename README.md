@@ -191,20 +191,11 @@ python test2.py # DETR
 * Creating Virtual Environment by Anaconda
 > conda create -y -n neurips python=3.9
 
-* \[Option1: **Conda**\] Installing PyTorch Package
-> conda install pytorch torchvision torchaudio pytorch-cuda=11.8 -c pytorch -c nvidia
-
-* \[Option2: **Pip**\] Installing PyTorch Package
-> pip3 install torch torchvision torchaudio
+* Installing [PyTorch]((https://pytorch.org/)) Package in Virtual Envrionment
+> pip3 install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
 
 * Installing Pip Package
 > pip install -r requirements.txt
-
-* Removing Pytorch for pytorch-cpu and -gpu dependency issue
-> conda uninstall pytorch
-
-* Installing Latest Pytorch-GPU
-> conda install pytorch torchvision torchaudio pytorch-cuda=11.7 -c pytorch -c nvidia
 
 * [Optional] Removing Conda and PIP Cache if Conda and PIP have been locked by unknown reasons
 > conda clean -a && pip cache purge
@@ -213,7 +204,7 @@ python test2.py # DETR
 
 ## Download Datasets
 ### Available Datasets
-* [COCO-stuff](https://paperswithcode.com/dataset/coco-stuff)
+* [COCO-Stuff](https://paperswithcode.com/dataset/coco-stuff)
 * [Cityscapes](https://paperswithcode.com/dataset/cityscapes)
 
 ### Try the following scripts
