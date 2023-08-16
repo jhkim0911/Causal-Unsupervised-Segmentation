@@ -4,7 +4,7 @@ from tqdm import tqdm
 from utils.utils import *
 from loader.stego_dataloader import stego_dataloader
 from torch.cuda.amp import autocast
-from loader.netloader import network_loader, segment2_loader
+from loader.netloader import network_loader, segment_detr_loader
 
 
 def test(args, net, segment, nice, test_loader, cmap):
@@ -43,7 +43,7 @@ def test(args, net, segment, nice, test_loader, cmap):
             hungarian_preds = nice.do_hungarian(crf_preds)
 
             # save images
-            save_all(args, ind, img, label, cluster_preds, crf_preds, hungarian_preds, cmap)
+            save_all(args, ind, img, label, cluster_preds, crf_preds, hungarian_preds, cmap, is_detr=True)
 
             # real-time print
             desc = f'{desc_nice}'
@@ -221,7 +221,7 @@ def main(rank, args):
 
     # network loader
     net = network_loader(args, rank)
-    segment = segment2_loader(args, rank)
+    segment = segment_detr_loader(args, rank)
 
     # evaluation
     nice = NiceTool(args.n_classes)

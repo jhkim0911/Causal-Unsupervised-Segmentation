@@ -10,11 +10,11 @@ class HeadSegment(nn.Module):
         super().__init__()
         self.dim = dim
         self.reduced_dim = reduced_dim
-        self.f1 = torch.nn.Sequential(nn.Conv2d(self.dim, self.reduced_dim, (1, 1)))
-        self.f2 = nn.Sequential(*[nn.Conv2d(self.dim, self.dim, (1, 1)),
-                                       nn.ReLU(),
-                                        nn.Conv2d(self.dim, self.reduced_dim, (1, 1))])
-
+        self.f1 = nn.Conv2d(self.dim, self.reduced_dim, (1, 1))
+        self.f2 = nn.Sequential(nn.Conv2d(self.dim, self.dim, (1, 1)),
+                                  nn.ReLU(),
+                                  nn.Conv2d(self.dim, self.reduced_dim, (1, 1)))
+        
     def forward(self, feat, drop=nn.Identity()):
         feat = Segment.transform(feat)
         feat = self.f1(drop(feat)) + self.f2(drop(feat))
@@ -25,9 +25,9 @@ class ProjectionSegment(nn.Module):
         super().__init__()
         self.f = func
         
-    def forward(self, feat):
+    def forward(self, feat, drop=nn.Identity()):
         feat = Segment.transform(feat)
-        feat = self.f(feat)
+        feat = self.f(drop(feat))
         return Segment.untransform(feat)
 
 class Segment(nn.Module):

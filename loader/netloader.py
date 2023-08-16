@@ -1,6 +1,6 @@
 from utils.utils import *
-from modules.segment import Segment
-from modules.segment2 import Segment2
+from modules.segment import Segment_CNN
+from modules.segment2 import Segment_DETR
 from torch.nn.parallel import DistributedDataParallel
 
 def network_loader(args, rank=0):
@@ -11,17 +11,17 @@ def network_loader(args, rank=0):
     freeze(net)
     return net
 
-def segment_loader(args, rank=0):
-    segment = Segment(args).cuda()
+def segment_cnn_loader(args, rank=0):
+    segment = Segment_CNN(args).cuda()
 
     if args.load_Best:
         baseline = args.ckpt.split('/')[-1].split('.')[0]
-        y = f'CUSS/{args.dataset}/{baseline}/{args.num_codebook}/best.pth'
+        y = f'CUSS/{args.dataset}/{baseline}/{args.num_codebook}/best_cnn.pth'
         segment.load_state_dict(torch.load(y, map_location=f'cuda:{rank}'), strict=False)
         rprint(f'[Best] {y} loaded', rank)
     elif args.load_Fine:
         baseline = args.ckpt.split('/')[-1].split('.')[0]
-        y = f'CUSS/{args.dataset}/{baseline}/{args.num_codebook}/finetune.pth'
+        y = f'CUSS/{args.dataset}/{baseline}/{args.num_codebook}/finetune_cnn.pth'
         segment.load_state_dict(torch.load(y, map_location=f'cuda:{rank}'), strict=False)
         rprint(f'[Fine] {y} loaded', rank)
     else:
@@ -32,17 +32,17 @@ def segment_loader(args, rank=0):
 
     return segment
 
-def segment2_loader(args, rank=0):
-    segment = Segment2(args).cuda()
+def segment_detr_loader(args, rank=0):
+    segment = Segment_DETR(args).cuda()
 
     if args.load_Best:
         baseline = args.ckpt.split('/')[-1].split('.')[0]
-        y = f'CUSS/{args.dataset}/{baseline}/{args.num_codebook}/best2.pth'
+        y = f'CUSS/{args.dataset}/{baseline}/{args.num_codebook}/best_detr.pth'
         segment.load_state_dict(torch.load(y, map_location=f'cuda:{rank}'), strict=False)
         rprint(f'[Best] {y} loaded', rank)
     elif args.load_Fine:
         baseline = args.ckpt.split('/')[-1].split('.')[0]
-        y = f'CUSS/{args.dataset}/{baseline}/{args.num_codebook}/finetune2.pth'
+        y = f'CUSS/{args.dataset}/{baseline}/{args.num_codebook}/finetune_detr.pth'
         segment.load_state_dict(torch.load(y, map_location=f'cuda:{rank}'), strict=False)
         rprint(f'[Fine] {y} loaded', rank)
     else:

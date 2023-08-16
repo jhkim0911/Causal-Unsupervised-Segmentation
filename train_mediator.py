@@ -7,7 +7,7 @@ import torch.multiprocessing as mp
 import torch.backends.cudnn as cudnn
 from loader.stego_dataloader import stego_dataloader
 from torch.cuda.amp import autocast, GradScaler
-from loader.netloader import network_loader, segment_loader
+from loader.netloader import network_loader, segment_cnn_loader
 
 cudnn.benchmark = True
 scaler = GradScaler()
@@ -108,7 +108,7 @@ def main(rank, args, ngpus_per_node):
 
     # network loader
     net = network_loader(args, rank)
-    segment = segment_loader(args, rank)
+    segment = segment_cnn_loader(args, rank)
 
     # optimizer and scheduler
     optimizer = torch.optim.AdamW(segment.parameters(), lr=1e-4 * ngpus_per_node)
@@ -187,7 +187,7 @@ if __name__ == "__main__":
     # dataset and baseline
     parser.add_argument('--data_dir', default='/mnt/hard2/lbk-iccv/datasets', type=str)
     parser.add_argument('--dataset', default='cocostuff27', type=str)
-    parser.add_argument('--ckpt', default='checkpoint/unicom_vit_base_16.pt', type=str)
+    parser.add_argument('--ckpt', default='checkpoint/dinov2_vit_base_14.pth', type=str)
 
     # DDP
     parser.add_argument('--gpu', default='0,1,2,3', type=str)

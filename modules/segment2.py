@@ -18,8 +18,6 @@ class HeadSegment(nn.Module):
         self.f1 = nn.Conv2d(self.dim, self.reduced_dim, (1, 1))
         self.f2 = nn.Sequential(nn.Conv2d(self.dim, self.dim, (1, 1)),
                                   nn.ReLU(),
-                                  nn.Conv2d(self.dim, self.dim, (1, 1)),
-                                  nn.ReLU(),
                                   nn.Conv2d(self.dim, self.reduced_dim, (1, 1)))
         
     def forward(self, feat, drop=nn.Identity()):

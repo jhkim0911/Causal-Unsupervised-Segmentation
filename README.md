@@ -27,13 +27,13 @@ in self-supervised vision transformer framework.
 If you want to download the pretrained models of DINO in various structures the following CUSS uses,
 you can download them in the following links:
 
-* [DINO](https://github.com/facebookresearch/dino)
-* [DINOv2](https://github.com/facebookresearch/dinov2)
-* [MAE](https://github.com/facebookresearch/mae)
-* [MoCov3](https://github.com/facebookresearch/moco-v3)
-* [iBOT](https://github.com/bytedance/ibot)
-* [Unicom](https://github.com/deepglint/unicom)
-* [MSN](https://github.com/facebookresearch/msn)
+* [DINO](https://github.com/facebookresearch/dino), ICCV 2021
+* [DINOv2](https://github.com/facebookresearch/dinov2), ArXiv 2023
+* [MAE](https://github.com/facebookresearch/mae), CVPR 2022
+* [MoCov3](https://github.com/facebookresearch/moco-v3), ICCV 2021
+* [iBOT](https://github.com/bytedance/ibot), ICLR 2022
+* [Unicom](https://github.com/deepglint/unicom), ICLR 2023
+* [MSN](https://github.com/facebookresearch/msn), ECCV 2022
 
 ---
 
@@ -128,9 +128,9 @@ In this shell script file, you can see the following code
 ```shell script
 dataset="cityscapes" # cocostuff27 or cityscapes
 train_gpu="0,1,2,3" # Only multi-gpu for DDP (if you want to run single gpu, then you will add "distributed" and set it to "False")
-test_gpu="0" # Only singe gpu
+test_gpu="${train_gpu:0}" # Only singe gpu
 ckpt="checkpoint/dino_vit_base_8.pth" # checkpoint root (/checkpoint) and its filename (name type is really important to run)
-port="12302" # DDP port number
+port=$(($RANDOM%100+1200)) # DDP port number
 
 # CNN
 python train_front_door.py --dataset $dataset --ckpt $ckpt --gpu $train_gpu --port $port && python fine_tuning.py --dataset $dataset --ckpt $ckpt --gpu $train_gpu --port $port && python test.py --dataset $dataset --ckpt $ckpt --gpu $test_gpu

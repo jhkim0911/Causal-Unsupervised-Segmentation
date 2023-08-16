@@ -75,16 +75,15 @@ def check_dir(dir_path):
     if not os.path.exists(dir_path):
         os.makedirs(dir_path)
 
-def save_all(args, ind, img, label, cluster_preds, crf_preds, hungarian_preds, cmap):
+def save_all(args, ind, img, label, cluster_preds, crf_preds, hungarian_preds, cmap, is_detr=False):
     baseline = args.ckpt.split('/')[-1].split('.')[0]
     y = f'{args.num_codebook}'
     check_dir(f'results')
-    if args.load_Fine:
-        root = os.path.join('results', args.dataset, 'FINE', baseline, y)
-    elif args.load_Best:
-        root = os.path.join('results', args.dataset, 'CUSS', baseline, y)
+    if is_detr:
+        root = os.path.join('results', args.dataset, 'DETR', baseline, y)
     else:
-        root = os.path.join('results', args.dataset, 'SS', baseline, y)
+        root = os.path.join('results', args.dataset, 'CNN', baseline, y)
+
     check_dir(f'{root}/imgs')
     check_dir(f'{root}/labels')
     check_dir(f'{root}/kmeans')
