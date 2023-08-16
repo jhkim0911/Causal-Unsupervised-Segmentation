@@ -1,10 +1,10 @@
 #!/bin/bash
-dataset="cocostuff27"
-# train_gpu="0,1,2,3"
-train_gpu="4,5,6,7"
-epoch=2
+dataset="cityscapes"
+train_gpu="0,1,2,3"
+# train_gpu="4,5,6,7"
+epoch=1
 test_gpu="${train_gpu:0}"
-ckpt="checkpoint/dino_vit_base_16.pth"
+ckpt="checkpoint/dino_vit_small_8.pth"
 port=$(($RANDOM%100+1200))
 
 

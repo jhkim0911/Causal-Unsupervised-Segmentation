@@ -21,9 +21,9 @@ class HeadSegment(nn.Module):
                                   nn.Conv2d(self.dim, self.reduced_dim, (1, 1)))
         
     def forward(self, feat, drop=nn.Identity()):
-        feat = Segment2.transform(feat)
+        feat = Segment_DETR.transform(feat)
         feat = self.f1(drop(feat)) + self.f2(drop(feat))
-        return Segment2.untransform(feat)
+        return Segment_DETR.untransform(feat)
     
 class ProjectionSegment(nn.Module):
     def __init__(self, func):
@@ -31,9 +31,9 @@ class ProjectionSegment(nn.Module):
         self.f = func
         
     def forward(self, feat):
-        feat = Segment2.transform(feat)
+        feat = Segment_DETR.transform(feat)
         feat = self.f(feat)
-        return Segment2.untransform(feat)
+        return Segment_DETR.untransform(feat)
     
 class TransformerDecoder(nn.Module):
 
@@ -150,15 +150,15 @@ class Decoder(nn.Module):
         self.f = HeadSegment(args.dim, args.reduced_dim)
 
         # interpolation
-        self.interp = lambda x, y: Segment2.untransform(
+        self.interp = lambda x, y: Segment_DETR.untransform(
             F.interpolate(
-            Segment2.transform(x), 
+            Segment_DETR.transform(x), 
             size=(int(math.sqrt(y)), int(math.sqrt(y))), 
             mode='bilinear'
             ))
         
     def forward(self, feat, drop=nn.Identity()):        
-        discrete_query = Segment2.vqt(feat, self.codebook)
+        discrete_query = Segment_DETR.vqt(feat, self.codebook)
         batch_query_embed = discrete_query + self.interp(self.pos_embed.unsqueeze(0), feat.shape[1]).repeat(feat.shape[0], 1, 1)
         head_feat = self.head(batch_query_embed.transpose(0, 1), feat.transpose(0, 1)).transpose(0, 1)
         return self.f(head_feat, drop)
@@ -168,7 +168,7 @@ class Decoder(nn.Module):
 
 
 
-class Segment2(nn.Module):
+class Segment_DETR(nn.Module):
     def __init__(self, args):
         super().__init__()
 
@@ -224,9 +224,9 @@ class Segment2(nn.Module):
     def quantize_index(z, c, mode='cos'):
         if mode == 'cos':
             # computing distance
-            dist = Segment2.cos_distance_matrix(z, c)
+            dist = Segment_DETR.cos_distance_matrix(z, c)
         elif mode == 'l2':
-            dist = Segment2.l2_distance_matrix(z, c)
+            dist = Segment_DETR.l2_distance_matrix(z, c)
 
         # quantize
         return dist.argmax(dim=2)
@@ -250,7 +250,7 @@ class Segment2(nn.Module):
     @staticmethod
     def codebook_index(z, c):
         # computing distance
-        dist = Segment2.cos_distance_matrix(z, c)
+        dist = Segment_DETR.cos_distance_matrix(z, c)
 
         # codebook index
         return dist.argmax(dim=2)
@@ -260,7 +260,7 @@ class Segment2(nn.Module):
         """
         Return Vector-Quantized Tensor
         """
-        codebook_ind = Segment2.codebook_index(z, c)
+        codebook_ind = Segment_DETR.codebook_index(z, c)
         return c[codebook_ind].view(*z.shape[:-1], c.shape[1])
 
     def bank_init(self):
@@ -406,7 +406,7 @@ class Segment2(nn.Module):
             norm = F.normalize(x, dim=2)
             A = (norm @ norm.transpose(2, 1)).clamp(0)
         elif mode=='l2':
-            A = Segment2.compute_self_distance_batch(x)
+            A = Segment_DETR.compute_self_distance_batch(x)
 
         A = A - A * torch.eye(A.shape[1]).cuda()
         d = A.sum(dim=2, keepdims=True)
@@ -427,13 +427,13 @@ class Segment2(nn.Module):
         x = x.detach()
 
         # pooling for reducing GPU memory allocation
-        if grid: x, _ = Segment2.stochastic_sampling(x)
+        if grid: x, _ = Segment_DETR.stochastic_sampling(x)
 
         # modularity matrix and its edge matrix
-        W, e = Segment2.get_modularity_matrix_and_edge(x)
+        W, e = Segment_DETR.get_modularity_matrix_and_edge(x)
 
         # cluster assignment matrix
-        C = Segment2.cluster_assignment_matrix(x, c)
+        C = Segment_DETR.cluster_assignment_matrix(x, c)
 
         # tanh with temperature
         D = C.transpose(2, 1)
@@ -513,7 +513,7 @@ class Segment2(nn.Module):
         """
         pooling
         """
-        x = Segment2.transform(x)
+        x = Segment_DETR.transform(x)
         x_patch = x.unfold(2, k, k).unfold(3, k, k)
         x_patch = x_patch.permute(0, 2, 3, 4, 5, 1)
         x_patch = x_patch.reshape(-1, x_patch.shape[3:5].numel(), x_patch.shape[5])
@@ -522,7 +522,7 @@ class Segment2(nn.Module):
 
         x_patch = x_patch[range(x_patch.shape[0]), order].reshape(x.shape[0], x.shape[2]//k, x.shape[3]//k, -1)
         x_patch = x_patch.permute(0, 3, 1, 2)
-        x = Segment2.untransform(x_patch)
+        x = Segment_DETR.untransform(x_patch)
         return x, order
 
     def forward_centroid(self, x, inference=False):

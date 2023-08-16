@@ -16,9 +16,9 @@ class HeadSegment(nn.Module):
                                   nn.Conv2d(self.dim, self.reduced_dim, (1, 1)))
         
     def forward(self, feat, drop=nn.Identity()):
-        feat = Segment.transform(feat)
+        feat = Segment_CNN.transform(feat)
         feat = self.f1(drop(feat)) + self.f2(drop(feat))
-        return Segment.untransform(feat)
+        return Segment_CNN.untransform(feat)
 
 class ProjectionSegment(nn.Module):
     def __init__(self, func):
@@ -26,13 +26,13 @@ class ProjectionSegment(nn.Module):
         self.f = func
         
     def forward(self, feat, drop=nn.Identity()):
-        feat = Segment.transform(feat)
+        feat = Segment_CNN.transform(feat)
         feat = self.f(drop(feat))
-        return Segment.untransform(feat)
+        return Segment_CNN.untransform(feat)
 
-class Segment(nn.Module):
+class Segment_CNN(nn.Module):
     def __init__(self, args):
-        super(Segment, self).__init__()
+        super(Segment_CNN, self).__init__()
 
         ##################################################################################
         # [Configuration]
@@ -88,9 +88,9 @@ class Segment(nn.Module):
     def quantize_index(z, c, mode='cos'):
         if mode == 'cos':
             # computing distance
-            dist = Segment.cos_distance_matrix(z, c)
+            dist = Segment_CNN.cos_distance_matrix(z, c)
         elif mode == 'l2':
-            dist = Segment.l2_distance_matrix(z, c)
+            dist = Segment_CNN.l2_distance_matrix(z, c)
 
         # quantize
         return dist.argmax(dim=2)
@@ -114,7 +114,7 @@ class Segment(nn.Module):
     @staticmethod
     def codebook_index(z, c):
         # computing distance
-        dist = Segment.cos_distance_matrix(z, c)
+        dist = Segment_CNN.cos_distance_matrix(z, c)
 
         # codebook index
         return dist.argmax(dim=2)
@@ -124,7 +124,7 @@ class Segment(nn.Module):
         """
         Return Vector-Quantized Tensor
         """
-        codebook_ind = Segment.codebook_index(z, c)
+        codebook_ind = Segment_CNN.codebook_index(z, c)
         return c[codebook_ind].view(*z.shape[:-1], c.shape[1])
 
     def bank_init(self):
@@ -270,7 +270,7 @@ class Segment(nn.Module):
             norm = F.normalize(x, dim=2)
             A = (norm @ norm.transpose(2, 1)).clamp(0)
         elif mode=='l2':
-            A = Segment.compute_self_distance_batch(x)
+            A = Segment_CNN.compute_self_distance_batch(x)
 
         A = A - A * torch.eye(A.shape[1]).cuda()
         d = A.sum(dim=2, keepdims=True)
@@ -291,14 +291,14 @@ class Segment(nn.Module):
         x = x.detach()
 
         # pooling for reducing GPU memory allocation
-        if grid: x, _ = Segment.stochastic_sampling(x)
+        if grid: x, _ = Segment_CNN.stochastic_sampling(x)
 
         # modularity matrix and its edge matrix
-        W, e = Segment.get_modularity_matrix_and_edge(x)
+        W, e = Segment_CNN.get_modularity_matrix_and_edge(x)
 
 
         # cluster assignment matrix
-        C = Segment.cluster_assignment_matrix(x, c)
+        C = Segment_CNN.cluster_assignment_matrix(x, c)
 
         # tanh with temperature
         D = C.transpose(2, 1)
@@ -379,7 +379,7 @@ class Segment(nn.Module):
         """
         pooling
         """
-        x = Segment.transform(x)
+        x = Segment_CNN.transform(x)
         x_patch = x.unfold(2, k, k).unfold(3, k, k)
         x_patch = x_patch.permute(0, 2, 3, 4, 5, 1)
         x_patch = x_patch.reshape(-1, x_patch.shape[3:5].numel(), x_patch.shape[5])
@@ -388,7 +388,7 @@ class Segment(nn.Module):
 
         x_patch = x_patch[range(x_patch.shape[0]), order].reshape(x.shape[0], x.shape[2]//k, x.shape[3]//k, -1)
         x_patch = x_patch.permute(0, 3, 1, 2)
-        x = Segment.untransform(x_patch)
+        x = Segment_CNN.untransform(x_patch)
         return x, order
 
     def forward_centroid(self, x, inference=False):
