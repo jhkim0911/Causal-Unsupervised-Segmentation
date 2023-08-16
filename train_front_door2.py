@@ -366,7 +366,9 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
 
-    if 'dinov2' in args.ckpt: args.test_resolution=322
+    if 'dinov2' in args.ckpt:
+        args.train_resolution=322
+        args.test_resolution=322
 
     if 'small' in args.ckpt:
         args.dim=384

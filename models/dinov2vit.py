@@ -529,10 +529,6 @@ class DinoVisionTransformer(nn.Module):
 
         if ffn_layer == "mlp":
             ffn_layer = Mlp
-        elif ffn_layer == "identity":
-            def f(*args, **kwargs):
-                return nn.Identity()
-            ffn_layer = f
         else:
             raise NotImplementedError
 

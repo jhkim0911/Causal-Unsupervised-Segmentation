@@ -150,14 +150,6 @@ class Decoder(nn.Module):
         
         # small segment
         self.f = HeadSegment(args.dim, args.reduced_dim)
-
-        # interpolation
-        self.interp = lambda x, y: Segment2.untransform(
-            F.interpolate(
-            Segment2.transform(x), 
-            size=(int(math.sqrt(y)), int(math.sqrt(y))), 
-            mode='bilinear'
-            ))
         
     def forward(self, feat, drop=nn.Identity()):        
         discrete_query = Segment2.vqt(feat, self.codebook)

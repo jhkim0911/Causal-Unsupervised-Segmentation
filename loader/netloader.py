@@ -54,6 +54,15 @@ def segment2_loader(args, rank=0):
     return segment
 
 
+def checkpoint_module(checkpoint, net):
+    from collections import OrderedDict
+    new_state_dict = OrderedDict()
+    for k, v in checkpoint.items():
+        name = k[7:]  # remove `module.`
+        new_state_dict[name] = v
+    msg = net.load_state_dict(new_state_dict, strict=False)
+    return msg
+
 def load_model(ckpt, rank=0):
     # name and arch
     name = ckpt_to_name(ckpt)
@@ -65,6 +74,12 @@ def load_model(ckpt, rank=0):
         import models.dinov2vit as model
     elif name == "mocov3":
         import models.mocov3vit as model
+    elif name == "ibot":
+        import models.ibotvit as model
+    elif name == "unicom":
+        import models.unicomvit as model
+    elif name == "msn":
+        import models.msnvit as model
     else:
         raise ValueError
 
@@ -76,16 +91,13 @@ def load_model(ckpt, rank=0):
         msg = net.load_state_dict(checkpoint, strict=False)
     elif name == "dinov2":
         msg = net.load_state_dict(checkpoint, strict=False)
+    elif name == "ibot":
+        msg = net.load_state_dict(checkpoint['state_dict'], strict=False)
+    elif name == "unicom":
+        msg = net.load_state_dict(checkpoint, strict=False)
+    elif name == "msn":
+        msg = checkpoint_module(checkpoint['target_encoder'], net)
     elif name == "mocov3":
-        def checkpoint_module(checkpoint, net):
-            from collections import OrderedDict
-            new_state_dict = OrderedDict()
-            for k, v in checkpoint.items():
-                name = k[7:]  # remove `module.`
-                new_state_dict[name] = v
-            msg = net.load_state_dict(new_state_dict, strict=False)
-            return msg
-
         msg = checkpoint_module(checkpoint['state_dict'], net)
 
     # check incompatible layer or variables

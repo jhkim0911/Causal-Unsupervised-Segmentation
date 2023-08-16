@@ -187,10 +187,10 @@ if __name__ == "__main__":
     # dataset and baseline
     parser.add_argument('--data_dir', default='/mnt/hard2/lbk-iccv/datasets', type=str)
     parser.add_argument('--dataset', default='cocostuff27', type=str)
-    parser.add_argument('--ckpt', default='checkpoint/dinov2_vit_base_14.pth', type=str)
+    parser.add_argument('--ckpt', default='checkpoint/unicom_vit_base_16.pt', type=str)
 
     # DDP
-    parser.add_argument('--gpu', default='4,5,6,7', type=str)
+    parser.add_argument('--gpu', default='0,1,2,3', type=str)
     parser.add_argument('--port', default='12359', type=str)
 
     # parameter

@@ -133,7 +133,8 @@ def test_linear_without_crf(args, net, segment, nice, test_loader):
             linear_logits = segment.linear(segment.untransform(interp_seg_feat))
 
             # cluster preds
-            cluster_preds = linear_logits.argmax(dim=1)
+            # cluster_preds = linear_logits.argmax(dim=1)
+            cluster_preds = torch.log_softmax(linear_logits, dim=1)
 
             # nice evaluation
             _, desc_nice = nice.eval(cluster_preds, label)
@@ -174,7 +175,8 @@ def test_linear(args, net, segment, nice, test_loader, cmap):
             linear_logits = segment.linear(segment.untransform(interp_seg_feat))
 
             # cluster preds
-            cluster_preds = linear_logits.argmax(dim=1)
+            # cluster_preds = linear_logits.argmax(dim=1)
+            cluster_preds = torch.log_softmax(linear_logits, dim=1)
 
             # crf
             onehot = F.one_hot(cluster_preds.to(torch.int64), args.n_classes).to(torch.float32)
@@ -294,7 +296,7 @@ if __name__ == "__main__":
     parser.add_argument('--data_dir', default='/mnt/hard2/lbk-iccv/datasets', type=str)
     parser.add_argument('--dataset', default='cocostuff27', type=str)
     parser.add_argument('--port', default='12355', type=str)
-    parser.add_argument('--ckpt', default='checkpoint/dino_vit_small_8.pth', type=str)
+    parser.add_argument('--ckpt', default='checkpoint/dino_vit_base_8.pth', type=str)
     parser.add_argument('--distributed', default=False, type=str2bool)
     parser.add_argument('--load_Best', default=False, type=str2bool)
     parser.add_argument('--load_Fine', default=True, type=str2bool)
@@ -304,7 +306,7 @@ if __name__ == "__main__":
     parser.add_argument('--num_workers', default=int(os.cpu_count() / 8), type=int)
 
     # CUSS parameter
-    parser.add_argument('--gpu', default='0', type=str)
+    parser.add_argument('--gpu', default='4', type=str)
     parser.add_argument('--num_codebook', default=2048, type=int)
 
     # decoder parameters
@@ -313,7 +315,9 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    if 'dinov2' in args.ckpt: args.test_resolution=322
+    if 'dinov2' in args.ckpt:
+        args.train_resolution=322
+        args.test_resolution=322
 
     if 'small' in args.ckpt:
         args.dim=384

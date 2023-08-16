@@ -236,10 +236,22 @@ class VisionTransformerMoCo(VisionTransformer):
         return torch.cat((class_pos_embed.unsqueeze(0), patch_pos_embed), dim=1)
 
 # baseline
+def vit_small(**kwargs):
+    model = VisionTransformerMoCo(
+        patch_size=16, embed_dim=384, depth=12, num_heads=12, mlp_ratio=4, qkv_bias=True,
+        norm_layer=partial(nn.LayerNorm, eps=1e-6), **kwargs)
+    return model
+
 def vit_base(**kwargs):
     model = VisionTransformerMoCo(
         patch_size=16, embed_dim=768, depth=12, num_heads=12, mlp_ratio=4, qkv_bias=True,
         norm_layer=partial(nn.LayerNorm, eps=1e-6), **kwargs)
+    return model
+
+
+# Moco v3
+def mocov3_vit_small_16():
+    model = MoCo_ViT(partial(vit_small, stop_grad_conv1=True), dim=256, mlp_dim=4096, T=1.0)
     return model
 
 # Moco v3
