@@ -224,8 +224,8 @@ def main(rank, args):
     # evaluation
     nice = NiceTool(args.n_classes)
 
-    # color map (cityscapes)
-    cmap = create_cityscapes_colormap()
+    # color map
+    cmap = create_cityscapes_colormap() if args.dataset == 'cityscapes' else create_pascal_label_colormap()
 
 
     ###################################################################################
@@ -249,12 +249,6 @@ def main(rank, args):
         rprint('Train Modularity-based Codebook First', rank)
         return
     ###################################################################################
-
-
-
-    # color map (cocostuff)
-    # cmap = create_pascal_label_colormap()
-
 
     # post-processing with crf and hungarian matching
     # test_without_crf(

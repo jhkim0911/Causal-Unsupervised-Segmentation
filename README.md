@@ -19,13 +19,22 @@ Further, we explain concrete implementation beyond the description of the main p
 
 ---
 
-## Download Visual Quality and Checkpoints of CUSS
+## Download Visual Quality and Checkpoints of CUSS (Under preparation for Sharable Link, The updated will be simultaneously completed within a few day!)
 
 You can download the checkpoint files including CUSS-trained parameters based on
-[DINO](https://openaccess.thecvf.com/content/ICCV2021/papers/Caron_Emerging_Properties_in_Self-Supervised_Vision_Transformers_ICCV_2021_paper.pdf)
+[DINO](https://openaccess.thecvf.com/content/ICCV2021/papers/Caron_Emerging_Properties_in_Self-Supervised_Vision_Transformers_ICCV_2021_paper.pdf), [DINOv2](https://arxiv.org/pdf/2304.07193.pdf), [MAE](https://openaccess.thecvf.com/content/CVPR2022/papers/He_Masked_Autoencoders_Are_Scalable_Vision_Learners_CVPR_2022_paper.pdf), [MoCov3](https://openaccess.thecvf.com/content/ICCV2021/papers/Chen_An_Empirical_Study_of_Training_Self-Supervised_Vision_Transformers_ICCV_2021_paper.pdf), [iBOT](https://openreview.net/pdf?id=ydopy-e6Dg), [Unicom](https://openreview.net/pdf?id=3YFDsSRSxB-), [EsViT](https://openreview.net/pdf?id=fVu3o-YUGQK), [MSN](https://www.ecva.net/papers/eccv_2022/papers_ECCV/papers/136910442.pdf)
 in self-supervised vision transformer framework.
 If you want to download the pretrained models of DINO in various structures the following CUSS uses,
-you can download them in [[link]](https://github.com/facebookresearch/dino).
+you can download them in the following links:
+
+* [DINO](https://github.com/facebookresearch/dino)
+* [DINOv2](https://github.com/facebookresearch/dinov2)
+* [MAE](https://github.com/facebookresearch/mae)
+* [MoCov3](https://github.com/facebookresearch/moco-v3)
+* [iBOT](https://github.com/bytedance/ibot)
+* [Unicom](https://github.com/deepglint/unicom)
+* [EsViT](https://github.com/microsoft/esvit)
+* [MSN](https://github.com/facebookresearch/msn)
 
 ---
 
@@ -35,32 +44,23 @@ you can download them in [[link]](https://github.com/facebookresearch/dino).
 |  COCO-Stuff  | DINO+**CUSS** | ViT-S/16 |  27.3   |  63.8   |  [[link]]()   | [[link]]() |
 |  COCO-Stuff  | DINO+**CUSS** | ViT-B/8  |  31.4   |  69.1   |  [[link]]()   | [[link]]() | 
 |  COCO-Stuff  | DINO+**CUSS** | ViT-B/16 |  28.8   |  67.4   |  [[link]]()   | [[link]]() |
-
-
-
----
-
-|   Dataset    | Method        | Baseline   | mIoU(%) | pAcc(%) |  Visual Quality                                         |                                           Checkpoint                                           |
-|:------------:|---------------|------------|:-------:|:-------:|:---------------------------------------------------------------------------------------------:|:----------------------------------------------------------------------------------------------:|
-|  COCO-Stuff  | MAE+**CUSS** | ViT-S/16 |  28.8   |  67.4   |  [[link]]()   | [[link]]() |
-|  COCO-Stuff  | MAE+**CUSS** | ViT-B/16 |  28.8   |  67.4   |  [[link]]()   | [[link]]() |
-
-
----
-
-|   Dataset    | Method        | Baseline   | mIoU(%) | pAcc(%) |  Visual Quality                                         |                                           Checkpoint                                           |
-|:------------:|---------------|------------|:-------:|:-------:|:---------------------------------------------------------------------------------------------:|:----------------------------------------------------------------------------------------------:|
-|  COCO-Stuff  | MoCov3+**CUSS** | ViT-S/16 |  28.8   |  67.4   |  [[link]]()   | [[link]]() |
-|  COCO-Stuff  | MoCov3+**CUSS** | ViT-B/16 |  28.8   |  67.4   |  [[link]]()   | [[link]]() |
-
-
-
----
-
-|   Dataset    | Method        | Baseline   | mIoU(%) | pAcc(%) |  Visual Quality                                         |                                           Checkpoint                                           |
-|:------------:|---------------|------------|:-------:|:-------:|:---------------------------------------------------------------------------------------------:|:----------------------------------------------------------------------------------------------:|
 |  COCO-Stuff  | DINOv2+**CUSS** | ViT-S/14 |  27.3   |  63.8   |  [[link]]()   | [[link]]() |
 |  COCO-Stuff  | DINOv2+**CUSS** | ViT-B/14 |  28.8   |  67.4   |  [[link]]()   | [[link]]() |
+|  COCO-Stuff  | MAE+**CUSS** | ViT-S/16 |  28.8   |  67.4   |  [[link]]()   | [[link]]() |
+|  COCO-Stuff  | MAE+**CUSS** | ViT-B/16 |  28.8   |  67.4   |  [[link]]()   | [[link]]() |
+|  COCO-Stuff  | MoCov3+**CUSS** | ViT-S/16 |  28.8   |  67.4   |  [[link]]()   | [[link]]() |
+|  COCO-Stuff  | MoCov3+**CUSS** | ViT-B/16 |  28.8   |  67.4   |  [[link]]()   | [[link]]() |
+|  COCO-Stuff  | iBOT+**CUSS** | ViT-S/16 |  28.8   |  67.4   |  [[link]]()   | [[link]]() |
+|  COCO-Stuff  | iBOT+**CUSS** | Swin-T/14 |  28.8   |  67.4   |  [[link]]()   | [[link]]() |
+|  COCO-Stuff  | iBOT+**CUSS** | ViT-B/16 |  28.8   |  67.4   |  [[link]]()   | [[link]]() |
+|  COCO-Stuff  | Unicom+**CUSS** | ViT-B/16 |  28.8   |  67.4   |  [[link]]()   | [[link]]() |
+|  COCO-Stuff  | EsViT+**CUSS** | Swin-T/14 |  28.8   |  67.4   |  [[link]]()   | [[link]]() |
+|  COCO-Stuff  | EsViT+**CUSS** | Swin-S/14 |  28.8   |  67.4   |  [[link]]()   | [[link]]() |
+|  COCO-Stuff  | EsViT+**CUSS** | Swin-B/14 |  28.8   |  67.4   |  [[link]]()   | [[link]]() |
+|  COCO-Stuff  | MSN+**CUSS** | ViT-S/16 |  28.8   |  67.4   |  [[link]]()   | [[link]]() |
+|  COCO-Stuff  | MSN+**CUSS** | ViT-B/16 |  28.8   |  67.4   |  [[link]]()   | [[link]]() |
+
+
 
 ---
 
@@ -70,31 +70,23 @@ you can download them in [[link]](https://github.com/facebookresearch/dino).
 |  Cityscapes  | DINO+**CUSS** | ViT-S/16   |  15.4   |  77.4   | [[link]]()  | [[link]]() |
 |  Cityscapes  | DINO+**CUSS** | ViT-B/8    |  23.0   |  86.9   | [[link]]()  | [[link]]() |
 |  Cityscapes  | DINO+**CUSS** | ViT-B/16   |  17.3   |  80.3   | [[link]]()  | [[link]]() |
-
-
-
-
-
-
-|   Dataset    | Method        | Baseline   | mIoU(%) | pAcc(%) |  Visual Quality                                         |                                           Checkpoint                                           |
-|:------------:|---------------|------------|:-------:|:-------:|:---------------------------------------------------------------------------------------------:|:----------------------------------------------------------------------------------------------:|
-|  Cityscapes  | MAE+**CUSS** | ViT-S/16 |  28.8   |  67.4   |  [[link]]()   | [[link]]() |
-|  Cityscapes  | MAE+**CUSS** | ViT-B/16 |  28.8   |  67.4   |  [[link]]()   | [[link]]() |
-
-
-|   Dataset    | Method        | Baseline   | mIoU(%) | pAcc(%) |  Visual Quality                                         |                                           Checkpoint                                           |
-|:------------:|---------------|------------|:-------:|:-------:|:---------------------------------------------------------------------------------------------:|:----------------------------------------------------------------------------------------------:|
-|  Cityscapes  | MoCov3+**CUSS** | ViT-S/16 |  28.8   |  67.4   |  [[link]]()   | [[link]]() |
-|  Cityscapes  | MoCov3+**CUSS** | ViT-B/16 |  28.8   |  67.4   |  [[link]]()   | [[link]]() |
-
-
-
----
-
-|   Dataset    | Method        | Baseline   | mIoU(%) | pAcc(%) |  Visual Quality                                         |                                           Checkpoint                                           |
-|:------------:|---------------|------------|:-------:|:-------:|:---------------------------------------------------------------------------------------------:|:----------------------------------------------------------------------------------------------:|
 |  Cityscapes  | DINOv2+**CUSS** | ViT-S/14 |  27.3   |  63.8   |  [[link]]()   | [[link]]() |
 |  Cityscapes  | DINOv2+**CUSS** | ViT-B/14 |  28.8   |  67.4   |  [[link]]()   | [[link]]() |
+|  Cityscapes  | MAE+**CUSS** | ViT-S/16 |  28.8   |  67.4   |  [[link]]()   | [[link]]() |
+|  Cityscapes  | MAE+**CUSS** | ViT-B/16 |  28.8   |  67.4   |  [[link]]()   | [[link]]() |
+|  Cityscapes  | MoCov3+**CUSS** | ViT-S/16 |  28.8   |  67.4   |  [[link]]()   | [[link]]() |
+|  Cityscapes  | MoCov3+**CUSS** | ViT-B/16 |  28.8   |  67.4   |  [[link]]()   | [[link]]() |
+|  Cityscapes  | iBOT+**CUSS** | ViT-S/16 |  28.8   |  67.4   |  [[link]]()   | [[link]]() |
+|  Cityscapes  | iBOT+**CUSS** | Swin-T/14 |  28.8   |  67.4   |  [[link]]()   | [[link]]() |
+|  Cityscapes  | iBOT+**CUSS** | ViT-B/16 |  28.8   |  67.4   |  [[link]]()   | [[link]]() |
+|  Cityscapes  | Unicom+**CUSS** | ViT-B/16 |  28.8   |  67.4   |  [[link]]()   | [[link]]() |
+|  Cityscapes  | EsViT+**CUSS** | Swin-T/14 |  28.8   |  67.4   |  [[link]]()   | [[link]]() |
+|  Cityscapes  | EsViT+**CUSS** | Swin-S/14 |  28.8   |  67.4   |  [[link]]()   | [[link]]() |
+|  Cityscapes  | EsViT+**CUSS** | Swin-B/14 |  28.8   |  67.4   |  [[link]]()   | [[link]]() |
+|  Cityscapes  | MSN+**CUSS** | ViT-S/16 |  28.8   |  67.4   |  [[link]]()   | [[link]]() |
+|  Cityscapes  | MSN+**CUSS** | ViT-B/16 |  28.8   |  67.4   |  [[link]]()   | [[link]]() |
+
+
 
 
 ---

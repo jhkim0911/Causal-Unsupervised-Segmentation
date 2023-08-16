@@ -69,9 +69,8 @@ def main(rank, args):
     nice2 = NiceTool(args.n_classes)
 
     # color map
-    cmap = create_cityscapes_colormap()
-    # cmap = create_pascal_label_colormap()
-
+    cmap = create_cityscapes_colormap() if args.dataset == 'cityscapes' else create_pascal_label_colormap()
+    
     # post-processing with crf and hungarian matching
     test(
         args,
