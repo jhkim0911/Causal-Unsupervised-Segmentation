@@ -167,7 +167,7 @@ class Segment(nn.Module):
         self.flat_norm_bank_proj_feat_ema = F.normalize(bank_proj_feat_ema, dim=1)
 
 
-    def contrastive_ema_with_codebook_bank(self, feat, proj_feat, proj_feat_ema, temp=0.07, pos_thresh=0.3, neg_thresh=0.3):
+    def contrastive_ema_with_codebook_bank(self, feat, proj_feat, proj_feat_ema, temp=0.07, pos_thresh=0.3, neg_thresh=0.1):
         """
         get all anchors and positive samples with same codebook index
         """
