@@ -30,9 +30,9 @@ class ProjectionSegment(nn.Module):
         super().__init__()
         self.f = func
         
-    def forward(self, feat):
+    def forward(self, feat, drop=nn.Identity()):
         feat = Segment_DETR.transform(feat)
-        feat = self.f(feat)
+        feat = self.f(drop(feat))
         return Segment_DETR.untransform(feat)
     
 class TransformerDecoder(nn.Module):
