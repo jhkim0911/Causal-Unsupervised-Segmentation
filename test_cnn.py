@@ -65,8 +65,7 @@ def main(rank, args):
     segment = segment_cnn_loader(args, rank)
 
     # evaluation
-    nice1 = NiceTool(args.n_classes)
-    nice2 = NiceTool(args.n_classes)
+    nice = NiceTool(args.n_classes)
 
     # color map
     cmap = create_cityscapes_colormap() if args.dataset == 'cityscapes' else create_pascal_label_colormap()
@@ -76,7 +75,7 @@ def main(rank, args):
         args,
         net.module if args.distributed else net,
         segment.module if args.distributed else segment,
-        nice1,
+        nice,
         test_loader,
         cmap)
 

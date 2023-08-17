@@ -37,7 +37,7 @@ class ProjectionSegment(nn.Module):
     
 class TransformerDecoder(nn.Module):
 
-    def __init__(self, decoder_layer, num_layers, norm=None):
+    def __init__(self, decoder_layer, norm, num_layers=6):
         super().__init__()
         self.layers = self._get_clones(decoder_layer, num_layers)
         self.num_layers = num_layers
@@ -47,92 +47,34 @@ class TransformerDecoder(nn.Module):
     def _get_clones(module, N):
         return nn.ModuleList([copy.deepcopy(module) for i in range(N)])
 
-    def forward(self, tgt, memory,
-                tgt_mask: Optional[Tensor] = None,
-                memory_mask: Optional[Tensor] = None,
-                tgt_key_padding_mask: Optional[Tensor] = None,
-                memory_key_padding_mask: Optional[Tensor] = None,
-                pos: Optional[Tensor] = None,
-                query_pos: Optional[Tensor] = None):
+    def forward(self, tgt, memory, tgt_mask: Optional[Tensor] = None):
         output = tgt
 
         for layer in self.layers:
-            output = layer(output, memory, tgt_mask=tgt_mask,
-                           memory_mask=memory_mask,
-                           tgt_key_padding_mask=tgt_key_padding_mask,
-                           memory_key_padding_mask=memory_key_padding_mask,
-                           pos=pos, query_pos=query_pos)
-
-        output = self.norm(output) + memory
-        return output
+            output = layer(output, memory, tgt_mask=tgt_mask)
+        return self.norm((output + memory)/2)
 
 class TransformerDecoderLayer(nn.Module):
 
-    def __init__(self, dim, nhead, dim_feedforward=90, dropout=0.1,
-                 activation="relu"):
+    def __init__(self, dim, nhead=1, dropout=0.1):
         super().__init__()
         self.self_attn = nn.MultiheadAttention(dim, nhead, dropout=dropout)
         self.multihead_attn = nn.MultiheadAttention(dim, nhead, dropout=dropout)
-        # Implementation of Feedforward model
-        self.linear1 = nn.Linear(dim, dim_feedforward)
-        self.dropout = nn.Dropout(dropout)
-        self.linear2 = nn.Linear(dim_feedforward, dim)
 
         self.norm1 = nn.LayerNorm(dim)
         self.norm2 = nn.LayerNorm(dim)
-        self.norm3 = nn.LayerNorm(dim)
-        self.dropout1 = nn.Dropout(dropout)
-        self.dropout2 = nn.Dropout(dropout)
-        self.dropout3 = nn.Dropout(dropout)
+        self.dropout = nn.Dropout(dropout)
 
-        self.activation = self._get_activation_fn(activation)
-
-    @staticmethod
-    def _get_activation_fn(activation):
-        """Return an activation function given a string"""
-        if activation == "relu":
-            return F.relu
-        if activation == "gelu":
-            return F.gelu
-        if activation == "glu":
-            return F.glu
-        raise RuntimeError(F"activation should be relu/gelu, not {activation}.")
-
-    def with_pos_embed(self, tensor, pos: Optional[Tensor]):
-        return tensor if pos is None else tensor + pos
-
-    def forward_post(self, tgt, memory,
-                     tgt_mask: Optional[Tensor] = None,
-                     memory_mask: Optional[Tensor] = None,
-                     tgt_key_padding_mask: Optional[Tensor] = None,
-                     memory_key_padding_mask: Optional[Tensor] = None,
-                     pos: Optional[Tensor] = None,
-                     query_pos: Optional[Tensor] = None):
-        q = k = self.with_pos_embed(tgt, query_pos)
-        tgt2 = self.self_attn(q, k, value=tgt, attn_mask=tgt_mask,
-                              key_padding_mask=tgt_key_padding_mask)[0]
-        tgt = tgt + self.dropout1(tgt2)
+    def forward_post(self, tgt, memory, tgt_mask: Optional[Tensor] = None):
+        q = k = tgt
+        tgt2 = self.self_attn(q, k, value=tgt, attn_mask=tgt_mask)[0]
+        tgt = tgt + self.dropout(tgt2)
         tgt = self.norm1(tgt)
-        tgt2 = self.multihead_attn(query=self.with_pos_embed(tgt, query_pos),
-                                   key=self.with_pos_embed(memory, pos),
-                                   value=memory, attn_mask=memory_mask,
-                                   key_padding_mask=memory_key_padding_mask)[0]
-        tgt = tgt + self.dropout2(tgt2)
-        tgt = self.norm2(tgt)
-        tgt2 = self.linear2(self.dropout(self.activation(self.linear1(tgt))))
-        tgt = tgt + self.dropout3(tgt2)
-        tgt = self.norm3(tgt)
-        return tgt
+        tgt2 = self.multihead_attn(query=tgt, key=memory, value=memory)[0]
+        return self.norm2(tgt)
 
-    def forward(self, tgt, memory,
-                tgt_mask: Optional[Tensor] = None,
-                memory_mask: Optional[Tensor] = None,
-                tgt_key_padding_mask: Optional[Tensor] = None,
-                memory_key_padding_mask: Optional[Tensor] = None,
-                pos: Optional[Tensor] = None,
-                query_pos: Optional[Tensor] = None):
-        return self.forward_post(tgt, memory, tgt_mask, memory_mask,
-                                 tgt_key_padding_mask, memory_key_padding_mask, pos, query_pos)
+    def forward(self, tgt, memory, tgt_mask: Optional[Tensor] = None):
+        return self.forward_post(tgt, memory, tgt_mask)
 
 
 class Decoder(nn.Module):
@@ -142,9 +84,7 @@ class Decoder(nn.Module):
 
         # DETR decoder
         self.pos_embed = nn.Parameter(torch.randn(args.num_queries, args.dim))
-        self.head = TransformerDecoder(TransformerDecoderLayer(args.dim, args.nhead),
-                                                args.num_decoder_layers,
-                                                nn.LayerNorm(args.dim))
+        self.head = TransformerDecoder(TransformerDecoderLayer(args.dim), nn.LayerNorm(args.dim))
         
         # small segment
         self.f = HeadSegment(args.dim, args.reduced_dim)

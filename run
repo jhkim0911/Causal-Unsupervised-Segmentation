@@ -3,15 +3,15 @@ dataset="cityscapes"
 # dataset="cocostuff27"
 
 # train_gpu="0,1,2,3"
-train_gpu="4,5,6,7"
+train_gpu="0,1,2,3"
 
 # ckpt="checkpoint/dino_vit_small_8.pth"
-ckpt="checkpoint/dino_vit_base_8.pth"
 # ckpt="checkpoint/dino_vit_small_16.pth"
+# ckpt="checkpoint/dino_vit_base_8.pth"
 # ckpt="checkpoint/dino_vit_base_16.pth"
 
 # ckpt="checkpoint/dinov2_vit_small_14.pth"
-# ckpt="checkpoint/dinov2_vit_base_14.pth"
+ckpt="checkpoint/dinov2_vit_base_14.pth"
 
 # CNN
 # epoch=2
@@ -25,10 +25,10 @@ port=$(($RANDOM%100+1200))
 
 
 # CNN
-# python train_front_door_cnn.py --dataset $dataset --ckpt $ckpt --gpu $train_gpu --port $port && python fine_tuning_cnn.py --dataset $dataset --epoch $epoch --ckpt $ckpt --gpu $train_gpu --port $port && python test_cnn.py --dataset $dataset --ckpt $ckpt --gpu $test_gpu
+python train_front_door_cnn.py --dataset $dataset --ckpt $ckpt --gpu $train_gpu --port $port && python fine_tuning_cnn.py --dataset $dataset --epoch $epoch --ckpt $ckpt --gpu $train_gpu --port $port && python test_cnn.py --dataset $dataset --ckpt $ckpt --gpu $test_gpu
 
 # DETR
-python train_front_door_detr.py --dataset $dataset --ckpt $ckpt --gpu $train_gpu --port $port && python fine_tuning_detr.py --epoch $epoch --dataset $dataset --ckpt $ckpt --gpu $train_gpu --port $port && python test_detr.py --dataset $dataset --ckpt $ckpt --gpu $test_gpu
+# python train_front_door_detr.py --dataset $dataset --ckpt $ckpt --gpu $train_gpu --port $port && python fine_tuning_detr.py --epoch $epoch --dataset $dataset --ckpt $ckpt --gpu $train_gpu --port $port && python test_detr.py --dataset $dataset --ckpt $ckpt --gpu $test_gpu
 
 # only test
 # python test_cnn.py --dataset $dataset --ckpt $ckpt --gpu $test_gpu

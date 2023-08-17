@@ -283,10 +283,6 @@ if __name__ == "__main__":
     parser.add_argument('--grid', default='yes', type=str2bool)
     parser.add_argument('--num_codebook', default=2048, type=int)
 
-    # decoder parameters
-    parser.add_argument('--nhead', default=1, type=int)
-    parser.add_argument('--num_decoder_layers', default=1, type=int)
-
     args = parser.parse_args()
 
     if 'dinov2' in args.ckpt:
