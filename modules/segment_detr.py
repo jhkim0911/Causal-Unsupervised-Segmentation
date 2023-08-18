@@ -6,8 +6,6 @@ import copy
 
 from torch import randperm as perm
 from torch import cat
-from torch import Tensor
-from typing import Optional
 
 
 class HeadSegment(nn.Module):
@@ -34,10 +32,11 @@ class ProjectionSegment(nn.Module):
         feat = Segment_DETR.transform(feat)
         feat = self.f(drop(feat))
         return Segment_DETR.untransform(feat)
-    
+
+
 class TransformerDecoder(nn.Module):
 
-    def __init__(self, decoder_layer, norm, num_layers=6):
+    def __init__(self, decoder_layer, norm, num_layers=1):
         super().__init__()
         self.layers = self._get_clones(decoder_layer, num_layers)
         self.num_layers = num_layers
@@ -47,12 +46,12 @@ class TransformerDecoder(nn.Module):
     def _get_clones(module, N):
         return nn.ModuleList([copy.deepcopy(module) for i in range(N)])
 
-    def forward(self, tgt, memory, tgt_mask: Optional[Tensor] = None):
+    def forward(self, tgt, memory):
         output = tgt
 
         for layer in self.layers:
-            output = layer(output, memory, tgt_mask=tgt_mask)
-        return self.norm((output + memory)/2)
+            output = layer(output, memory)
+        return output + memory
 
 class TransformerDecoderLayer(nn.Module):
 
@@ -63,19 +62,19 @@ class TransformerDecoderLayer(nn.Module):
 
         self.norm1 = nn.LayerNorm(dim)
         self.norm2 = nn.LayerNorm(dim)
-        self.dropout = nn.Dropout(dropout)
+        self.norm3 = nn.LayerNorm(dim)
+        self.dropout1 = nn.Dropout(dropout)
+        self.dropout2 = nn.Dropout(dropout)
 
-    def forward_post(self, tgt, memory, tgt_mask: Optional[Tensor] = None):
+    def forward(self, tgt, memory):
         q = k = tgt
-        tgt2 = self.self_attn(q, k, value=tgt, attn_mask=tgt_mask)[0]
-        tgt = tgt + self.dropout(tgt2)
-        tgt = self.norm1(tgt)
-        tgt2 = self.multihead_attn(query=tgt, key=memory, value=memory)[0]
-        return self.norm2(tgt)
-
-    def forward(self, tgt, memory, tgt_mask: Optional[Tensor] = None):
-        return self.forward_post(tgt, memory, tgt_mask)
-
+        self_attn = self.self_attn(q, k, value=tgt)[0]
+        add_norm1 = self.norm1(tgt + self.dropout1(self_attn))
+        cross_attn = self.multihead_attn(query=add_norm1,
+                                   key=memory,
+                                   value=memory)[0]
+        add_norm2 = self.norm2(add_norm1 + self.dropout2(cross_attn))
+        return add_norm2
 
 class Decoder(nn.Module):
     def __init__(self, args, codebook):
@@ -97,15 +96,15 @@ class Decoder(nn.Module):
             mode='bilinear'
             ))
         
+        # norm
+        self.norm = nn.LayerNorm(args.reduced_dim)
+        
     def forward(self, feat, drop=nn.Identity()):        
         discrete_query = Segment_DETR.vqt(feat, self.codebook)
-        batch_query_embed = discrete_query + self.interp(self.pos_embed.unsqueeze(0), feat.shape[1]).repeat(feat.shape[0], 1, 1)
+        pos_embed = self.interp(self.pos_embed.unsqueeze(0), feat.shape[1]).repeat(feat.shape[0], 1, 1)
+        batch_query_embed = discrete_query + pos_embed
         head_feat = self.head(batch_query_embed.transpose(0, 1), feat.transpose(0, 1)).transpose(0, 1)
-        return self.f(head_feat, drop)
-
-    def __call__(self, *args, **kwargs):
-        return self.forward(*args, **kwargs)
-
+        return self.norm(self.f(head_feat, drop))
 
 
 class Segment_DETR(nn.Module):
