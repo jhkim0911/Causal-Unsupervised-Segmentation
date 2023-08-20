@@ -39,16 +39,10 @@ class DETR(nn.Module):
         self.self_attn = nn.MultiheadAttention(dim, nhead, dropout=dropout)
         self.cross_attn = nn.MultiheadAttention(dim, nhead, dropout=dropout)
 
-        self.linear1 = nn.Linear(dim, reduced_dim)
-        self.dropout = nn.Dropout(dropout)
-        self.linear2 = nn.Linear(reduced_dim, dim)
-
         self.norm1 = nn.LayerNorm(dim)
         self.norm2 = nn.LayerNorm(dim)
-        self.norm3 = nn.LayerNorm(dim)
         self.dropout1 = nn.Dropout(dropout)
         self.dropout2 = nn.Dropout(dropout)
-        self.dropout3 = nn.Dropout(dropout)
 
         # ffn
         self.ffn = HeadSegment(dim, reduced_dim)
@@ -59,10 +53,7 @@ class DETR(nn.Module):
         tgt = self.norm1(tgt)
         tgt2 = self.cross_attn(query=tgt, key=memory, value=memory)[0]
         tgt = tgt + self.dropout2(tgt2)
-        tgt = self.norm2(tgt)
-        tgt2 = self.linear2(self.dropout(F.relu(self.linear1(tgt))))
-        tgt = tgt + self.dropout3(tgt2)
-        tgt = memory + self.norm3(tgt)
+        tgt = memory + self.norm2(tgt)
         tgt = self.ffn(tgt, drop)
         return tgt
 

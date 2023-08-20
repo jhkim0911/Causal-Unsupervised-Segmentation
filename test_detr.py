@@ -295,7 +295,7 @@ if __name__ == "__main__":
     parser.add_argument('--distributed', default=False, type=str2bool)
     parser.add_argument('--load_Best', default=False, type=str2bool)
     parser.add_argument('--load_Fine', default=True, type=str2bool)
-    parser.add_argument('--train_resolution', default=224, type=int)
+    parser.add_argument('--train_resolution', default=320, type=int)
     parser.add_argument('--test_resolution', default=320, type=int)
     parser.add_argument('--batch_size', default=4, type=int)
     parser.add_argument('--num_workers', default=int(os.cpu_count() / 8), type=int)
@@ -307,7 +307,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     if 'dinov2' in args.ckpt:
-        args.train_resolution=224
+        args.train_resolution=322
         args.test_resolution=322
 
     if 'small' in args.ckpt:
