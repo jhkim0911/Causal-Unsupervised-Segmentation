@@ -179,15 +179,15 @@ if __name__ == "__main__":
     parser.add_argument('--distributed', default=True, type=str2bool)
     parser.add_argument('--load_Best', default=False, type=str2bool)
     parser.add_argument('--load_Fine', default=False, type=str2bool)
-    parser.add_argument('--train_resolution', default=224, type=int)
+    parser.add_argument('--train_resolution', default=320, type=int)
     parser.add_argument('--test_resolution', default=320, type=int)
-    parser.add_argument('--batch_size', default=16, type=int)
+    parser.add_argument('--batch_size', default=8, type=int)
     parser.add_argument('--num_workers', default=int(os.cpu_count() / 8), type=int)
 
     # dataset and baseline
     parser.add_argument('--data_dir', default='/mnt/hard2/lbk-iccv/datasets', type=str)
-    parser.add_argument('--dataset', default='cocostuff27', type=str)
-    parser.add_argument('--ckpt', default='checkpoint/dinov2_vit_base_14.pth', type=str)
+    parser.add_argument('--dataset', default='cityscapes', type=str)
+    parser.add_argument('--ckpt', default='checkpoint/dinov2_vit_small_14.pth', type=str)
 
     # DDP
     parser.add_argument('--gpu', default='0,1,2,3', type=str)
@@ -199,7 +199,9 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    if 'dinov2' in args.ckpt: args.test_resolution=322
+    if 'dinov2' in args.ckpt:
+        args.train_resolution=322
+        args.test_resolution=322
 
     if 'small' in args.ckpt:
         args.dim=384

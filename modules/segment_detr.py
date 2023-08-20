@@ -2,21 +2,21 @@ import torch
 import torch.nn.functional as F
 import torch.nn as nn
 import math
-import copy
 
 from torch import randperm as perm
 from torch import cat
 
-
+    
 class HeadSegment(nn.Module):
     def __init__(self, dim, reduced_dim):
         super().__init__()
         self.dim = dim
         self.reduced_dim = reduced_dim
+
         self.f1 = nn.Conv2d(self.dim, self.reduced_dim, (1, 1))
         self.f2 = nn.Sequential(nn.Conv2d(self.dim, self.dim, (1, 1)),
-                                  nn.ReLU(),
-                                  nn.Conv2d(self.dim, self.reduced_dim, (1, 1)))
+                                nn.ReLU(),
+                                nn.Conv2d(self.dim, self.reduced_dim, (1, 1)))
         
     def forward(self, feat, drop=nn.Identity()):
         feat = Segment_DETR.transform(feat)
@@ -33,48 +33,38 @@ class ProjectionSegment(nn.Module):
         feat = self.f(drop(feat))
         return Segment_DETR.untransform(feat)
 
-
-class TransformerDecoder(nn.Module):
-
-    def __init__(self, decoder_layer, norm, num_layers=1):
-        super().__init__()
-        self.layers = self._get_clones(decoder_layer, num_layers)
-        self.num_layers = num_layers
-        self.norm = norm
-
-    @staticmethod
-    def _get_clones(module, N):
-        return nn.ModuleList([copy.deepcopy(module) for i in range(N)])
-
-    def forward(self, tgt, memory):
-        output = tgt
-
-        for layer in self.layers:
-            output = layer(output, memory)
-        return output + memory
-
-class TransformerDecoderLayer(nn.Module):
-
-    def __init__(self, dim, nhead=1, dropout=0.1):
+class DETR(nn.Module):
+    def __init__(self, dim, reduced_dim, nhead=1, dropout=0.1):
         super().__init__()
         self.self_attn = nn.MultiheadAttention(dim, nhead, dropout=dropout)
-        self.multihead_attn = nn.MultiheadAttention(dim, nhead, dropout=dropout)
+        self.cross_attn = nn.MultiheadAttention(dim, nhead, dropout=dropout)
+
+        self.linear1 = nn.Linear(dim, reduced_dim)
+        self.dropout = nn.Dropout(dropout)
+        self.linear2 = nn.Linear(reduced_dim, dim)
 
         self.norm1 = nn.LayerNorm(dim)
         self.norm2 = nn.LayerNorm(dim)
         self.norm3 = nn.LayerNorm(dim)
         self.dropout1 = nn.Dropout(dropout)
         self.dropout2 = nn.Dropout(dropout)
+        self.dropout3 = nn.Dropout(dropout)
 
-    def forward(self, tgt, memory):
-        q = k = tgt
-        self_attn = self.self_attn(q, k, value=tgt)[0]
-        add_norm1 = self.norm1(tgt + self.dropout1(self_attn))
-        cross_attn = self.multihead_attn(query=add_norm1,
-                                   key=memory,
-                                   value=memory)[0]
-        add_norm2 = self.norm2(add_norm1 + self.dropout2(cross_attn))
-        return add_norm2
+        # ffn
+        self.ffn = HeadSegment(dim, reduced_dim)
+
+    def forward(self, tgt, memory, drop):
+        tgt2 = self.self_attn(tgt, tgt, value=tgt)[0]
+        tgt = tgt + self.dropout1(tgt2)
+        tgt = self.norm1(tgt)
+        tgt2 = self.cross_attn(query=tgt, key=memory, value=memory)[0]
+        tgt = tgt + self.dropout2(tgt2)
+        tgt = self.norm2(tgt)
+        tgt2 = self.linear2(self.dropout(F.relu(self.linear1(tgt))))
+        tgt = tgt + self.dropout3(tgt2)
+        tgt = memory + self.norm3(tgt)
+        tgt = self.ffn(tgt, drop)
+        return tgt
 
 class Decoder(nn.Module):
     def __init__(self, args, codebook):
@@ -82,30 +72,13 @@ class Decoder(nn.Module):
         self.codebook = codebook
 
         # DETR decoder
-        self.pos_embed = nn.Parameter(torch.randn(args.num_queries, args.dim))
-        self.head = TransformerDecoder(TransformerDecoderLayer(args.dim), nn.LayerNorm(args.dim))
-        
-        # small segment
-        self.f = HeadSegment(args.dim, args.reduced_dim)
+        self.decoder = DETR(args.dim, args.reduced_dim)
 
-        # interpolation
-        self.interp = lambda x, y: Segment_DETR.untransform(
-            F.interpolate(
-            Segment_DETR.transform(x), 
-            size=(int(math.sqrt(y)), int(math.sqrt(y))), 
-            mode='bilinear'
-            ))
-        
-        # norm
-        self.norm = nn.LayerNorm(args.reduced_dim)
-        
     def forward(self, feat, drop=nn.Identity()):        
         discrete_query = Segment_DETR.vqt(feat, self.codebook)
-        pos_embed = self.interp(self.pos_embed.unsqueeze(0), feat.shape[1]).repeat(feat.shape[0], 1, 1)
-        batch_query_embed = discrete_query + pos_embed
-        head_feat = self.head(batch_query_embed.transpose(0, 1), feat.transpose(0, 1)).transpose(0, 1)
-        return self.norm(self.f(head_feat, drop))
-
+        dec_feat = self.decoder(discrete_query, feat, drop)
+        return dec_feat
+    
 
 class Segment_DETR(nn.Module):
     def __init__(self, args):
@@ -158,6 +131,13 @@ class Segment_DETR(nn.Module):
         self.cluster_probe = torch.nn.Parameter(torch.randn(args.n_classes, self.reduced_dim))
         self.reset(self.cluster_probe, args.n_classes)
         ##################################################################################        
+
+    @property
+    def num_param(self):
+        out = 0
+        for param in self.head.parameters():
+            out += param.numel()
+        return out
 
     @staticmethod
     def quantize_index(z, c, mode='cos'):
@@ -377,7 +357,7 @@ class Segment_DETR(nn.Module):
         # tanh with temperature
         D = C.transpose(2, 1)
         E = torch.tanh(D.unsqueeze(3) @ D.unsqueeze(2) / temp)
-        delta, ind = E.max(dim=1)
+        delta, _ = E.max(dim=1)
         Q = (W / e) @ delta
 
         # trace

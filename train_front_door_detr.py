@@ -344,7 +344,7 @@ if __name__ == "__main__":
     # model parameter
     parser.add_argument('--data_dir', default='/mnt/hard2/lbk-iccv/datasets/', type=str)
     parser.add_argument('--dataset', default='cocostuff27', type=str)
-    parser.add_argument('--ckpt', default='checkpoint/dino_vit_small_8.pth', type=str)
+    parser.add_argument('--ckpt', default='checkpoint/dino_vit_base_16.pth', type=str)
     parser.add_argument('--epoch', default=1, type=int)
     parser.add_argument('--distributed', default=True, type=str2bool)
     parser.add_argument('--load_Best', default=False, type=str2bool)
@@ -365,19 +365,17 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     if 'dinov2' in args.ckpt:
-        args.train_resolution=322
+        args.train_resolution=224
         args.test_resolution=322
 
     if 'small' in args.ckpt:
         args.dim=384
         args.reduced_dim=70
         args.projection_dim=2048
-        args.num_queries=args.train_resolution**2 // int(args.ckpt.split('_')[-1].split('.')[0])**2
     elif 'base' in args.ckpt:
         args.dim=768
         args.reduced_dim=70
         args.projection_dim=2048
-        args.num_queries=args.train_resolution**2 // int(args.ckpt.split('_')[-1].split('.')[0])**2
 
     # the number of gpus for multi-process
     gpu_list = list(map(int, args.gpu.split(',')))

@@ -90,7 +90,7 @@ def test_without_crf(args, net, segment, nice, test_loader, cmap):
             hungarian_preds = nice.do_hungarian(cluster_preds)
 
             # save images
-            save_all(args, ind, img, label, cluster_preds, cluster_preds, hungarian_preds, cmap)
+            # save_all(args, ind, img, label, cluster_preds, cluster_preds, hungarian_preds, cmap)
 
         # linear probe acc check
         pred_label = linear_logits.argmax(dim=1)
@@ -148,7 +148,7 @@ def test_linear_without_crf(args, net, segment, nice, test_loader):
 
 
 
-def test_linear(args, net, segment, nice, test_loader, cmap):
+def test_linear(args, net, segment, nice, test_loader):
     segment.eval()
 
     prog_bar = tqdm(enumerate(test_loader), total=len(test_loader), leave=True)
@@ -185,19 +185,12 @@ def test_linear(args, net, segment, nice, test_loader, cmap):
             # nice evaluation
             _, desc_nice = nice.eval(crf_preds, label)
 
-            # hungarian
-            hungarian_preds = nice.do_hungarian(crf_preds)
-
-            # save images
-            save_all(args, ind, img, label, cluster_preds, crf_preds, hungarian_preds, cmap)
-
             # real-time print
             desc = f'{desc_nice}'
             prog_bar.set_description(desc, refresh=True)
 
     # evaludation metric reset
     nice.reset()
-
 
 
 def pickle_path_and_exist(args):
@@ -252,14 +245,17 @@ def main(rank, args):
         return
     ###################################################################################
 
+    # param size
+    print(f'# of Parameters: {segment.num_param/10**6:.2f}(M)') 
+
     # post-processing with crf and hungarian matching
-    # test_without_crf(
-    #     args,
-    #     net.module if args.distributed else net,
-    #     segment.module if args.distributed else segment,
-    #     nice,
-    #     test_loader,
-    #     cmap)
+    test_without_crf(
+        args,
+        net.module if args.distributed else net,
+        segment.module if args.distributed else segment,
+        nice,
+        test_loader,
+        cmap)
 
     # post-processing with crf and hungarian matching
     test(
@@ -283,8 +279,7 @@ def main(rank, args):
     #     net.module if args.distributed else net,
     #     segment.module if args.distributed else segment,
     #     nice,
-    #     test_loader,
-    #     cmap)
+    #     test_loader)
 
 
 if __name__ == "__main__":
@@ -294,9 +289,9 @@ if __name__ == "__main__":
     
     # model parameter
     parser.add_argument('--data_dir', default='/mnt/hard2/lbk-iccv/datasets', type=str)
-    parser.add_argument('--dataset', default='cocostuff27', type=str)
+    parser.add_argument('--dataset', default='cityscapes', type=str)
     parser.add_argument('--port', default='12355', type=str)
-    parser.add_argument('--ckpt', default='checkpoint/dino_vit_base_8.pth', type=str)
+    parser.add_argument('--ckpt', default='checkpoint/dino_vit_small_8.pth', type=str)
     parser.add_argument('--distributed', default=False, type=str2bool)
     parser.add_argument('--load_Best', default=False, type=str2bool)
     parser.add_argument('--load_Fine', default=True, type=str2bool)
@@ -312,19 +307,17 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     if 'dinov2' in args.ckpt:
-        args.train_resolution=322
+        args.train_resolution=224
         args.test_resolution=322
 
     if 'small' in args.ckpt:
         args.dim=384
-        args.reduced_dim=70
+        args.reduced_dim=128
         args.projection_dim=2048
-        args.num_queries=args.train_resolution**2 // int(args.ckpt.split('_')[-1].split('.')[0])**2
     elif 'base' in args.ckpt:
         args.dim=768
-        args.reduced_dim=70
+        args.reduced_dim=128
         args.projection_dim=2048
-        args.num_queries=args.train_resolution**2 // int(args.ckpt.split('_')[-1].split('.')[0])**2
 
     # the number of gpus for multi-process
     gpu_list = list(map(int, args.gpu.split(',')))

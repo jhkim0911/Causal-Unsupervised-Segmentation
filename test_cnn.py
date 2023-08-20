@@ -70,6 +70,10 @@ def main(rank, args):
     # color map
     cmap = create_cityscapes_colormap() if args.dataset == 'cityscapes' else create_pascal_label_colormap()
     
+    # param size
+    print(f'# of Parameters: {segment.num_param/10**6:.2f}(M)') 
+
+
     # post-processing with crf and hungarian matching
     test(
         args,
@@ -90,7 +94,7 @@ if __name__ == "__main__":
     parser.add_argument('--port', default='12355', type=str)
     parser.add_argument('--load_Best', default=False, type=str2bool)
     parser.add_argument('--load_Fine', default=True, type=str2bool)
-    parser.add_argument('--ckpt', default='checkpoint/dino_vit_small_8.pth', type=str)
+    parser.add_argument('--ckpt', default='checkpoint/dino_vit_small_16.pth', type=str)
     parser.add_argument('--distributed', default=False, type=str2bool)
     parser.add_argument('--train_resolution', default=224, type=int)
     parser.add_argument('--test_resolution', default=320, type=int)

@@ -84,6 +84,13 @@ class Segment_CNN(nn.Module):
         self.reset(self.cluster_probe, args.n_classes)
         ##################################################################################
 
+    @property
+    def num_param(self):
+        out = 0
+        for param in self.head.parameters():
+            out += param.numel()
+        return out
+
     @staticmethod
     def quantize_index(z, c, mode='cos'):
         if mode == 'cos':
