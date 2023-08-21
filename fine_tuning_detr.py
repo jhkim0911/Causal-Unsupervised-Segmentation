@@ -67,6 +67,8 @@ def train(args, net, segment, train_loader, optimizer):
         # optimizer
         optimizer.zero_grad()
         scaler.scale(loss).backward()
+        scaler.unscale_(optimizer)
+        torch.nn.utils.clip_grad_norm_(segment.parameters(), 1)
         scaler.step(optimizer)
         scaler.update()
 
@@ -168,7 +170,7 @@ def main(rank, args, ngpus_per_node):
     segment = segment_detr_loader(args, rank)
 
     # optimizer
-    optimizer = torch.optim.Adam(segment.parameters(), lr=1e-3 * ngpus_per_node, weight_decay=1e-3)
+    optimizer = torch.optim.AdamW(segment.parameters(), lr=1e-3 * ngpus_per_node, weight_decay=1e-3)
     scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=2, gamma=0.5)
 
     # evaluation
@@ -283,20 +285,20 @@ if __name__ == "__main__":
     parser.add_argument('--grid', default='yes', type=str2bool)
     parser.add_argument('--num_codebook', default=2048, type=int)
 
+    # model parameter
+    parser.add_argument('--reduced_dim', default=70, type=int)
+    parser.add_argument('--projection_dim', default=2048, type=int)
+
     args = parser.parse_args()
 
     if 'dinov2' in args.ckpt:
         args.train_resolution=322
         args.test_resolution=322
-
     if 'small' in args.ckpt:
         args.dim=384
-        args.reduced_dim=128
-        args.projection_dim=2048
     elif 'base' in args.ckpt:
         args.dim=768
-        args.reduced_dim=128
-        args.projection_dim=2048
+    args.num_queries=args.train_resolution**2 // int(args.ckpt.split('_')[-1].split('.')[0])**2
 
     # the number of gpus for multi-process
     gpu_list = list(map(int, args.gpu.split(',')))

@@ -32,30 +32,48 @@ class ProjectionSegment(nn.Module):
         feat = Segment_DETR.transform(feat)
         feat = self.f(drop(feat))
         return Segment_DETR.untransform(feat)
+        
 
 class DETR(nn.Module):
-    def __init__(self, dim, reduced_dim, nhead=1, dropout=0.1):
+    def __init__(self, dim, reduced_dim, num_queries, nhead=1, dropout=0.1):
         super().__init__()
-        self.self_attn = nn.MultiheadAttention(dim, nhead, dropout=dropout)
-        self.cross_attn = nn.MultiheadAttention(dim, nhead, dropout=dropout)
+        self.pos_embed = nn.Parameter(torch.randn(num_queries, dim))
+        
+        self.self_attn = nn.MultiheadAttention(dim, nhead, dropout=dropout, batch_first=True)
+        self.cross_attn = nn.MultiheadAttention(dim, nhead, dropout=dropout, batch_first=True)
+
+        self.linear1 = nn.Conv2d(dim, reduced_dim, kernel_size=1)
+        self.dropout = nn.Dropout(dropout)
+        self.linear2 = nn.Conv2d(reduced_dim, dim, kernel_size=1)
 
         self.norm1 = nn.LayerNorm(dim)
         self.norm2 = nn.LayerNorm(dim)
+        self.norm3 = nn.LayerNorm(dim)
         self.dropout1 = nn.Dropout(dropout)
         self.dropout2 = nn.Dropout(dropout)
+        self.dropout3 = nn.Dropout(dropout)
 
-        # ffn
+
         self.ffn = HeadSegment(dim, reduced_dim)
 
     def forward(self, tgt, memory, drop):
-        tgt2 = self.self_attn(tgt, tgt, value=tgt)[0]
+        pos_embed = self.pos_embed.unsqueeze(0)
+        tgt2 = self.self_attn(tgt + pos_embed, 
+                              tgt + pos_embed, 
+                              value=tgt)[0]
         tgt = tgt + self.dropout1(tgt2)
         tgt = self.norm1(tgt)
-        tgt2 = self.cross_attn(query=tgt, key=memory, value=memory)[0]
+        tgt2 = self.cross_attn(query=tgt + pos_embed, 
+                               key=memory, 
+                               value=memory)[0]
         tgt = tgt + self.dropout2(tgt2)
-        tgt = memory + self.norm2(tgt)
-        tgt = self.ffn(tgt, drop)
-        return tgt
+        tgt = self.norm2(tgt)
+        tgt = Segment_DETR.transform(tgt)
+        tgt2 = self.linear2(self.dropout(F.relu(self.linear1(tgt))))
+        tgt = tgt + self.dropout3(tgt2)
+        tgt = Segment_DETR.untransform(tgt)
+        tgt = memory + self.norm3(tgt)
+        return self.ffn(tgt, drop)
 
 class Decoder(nn.Module):
     def __init__(self, args, codebook):
@@ -63,7 +81,7 @@ class Decoder(nn.Module):
         self.codebook = codebook
 
         # DETR decoder
-        self.decoder = DETR(args.dim, args.reduced_dim)
+        self.decoder = DETR(args.dim, args.reduced_dim, args.num_queries)
 
     def forward(self, feat, drop=nn.Identity()):        
         discrete_query = Segment_DETR.vqt(feat, self.codebook)

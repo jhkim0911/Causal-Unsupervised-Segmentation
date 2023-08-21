@@ -101,24 +101,21 @@ if __name__ == "__main__":
     parser.add_argument('--batch_size', default=16, type=int)
     parser.add_argument('--num_workers', default=int(os.cpu_count() / 8), type=int)
 
-    # DDP
-    parser.add_argument('--gpu', default='0,1,2,3', type=str)
-
     # CUSS parameter
+    parser.add_argument('--gpu', default='0', type=str)
     parser.add_argument('--num_codebook', default=2048, type=int)
+
+    # model parameter
+    parser.add_argument('--reduced_dim', default=70, type=int)
+    parser.add_argument('--projection_dim', default=2048, type=int)
 
     args = parser.parse_args()
 
     if 'dinov2' in args.ckpt: args.test_resolution=322
-
     if 'small' in args.ckpt:
         args.dim = 384
-        args.reduced_dim=70
-        args.projection_dim=2048
     elif 'base' in args.ckpt:
         args.dim = 768
-        args.reduced_dim=70
-        args.projection_dim=2048
 
     # the number of gpus for multi-process
     gpu_list = list(map(int, args.gpu.split(',')))
