@@ -270,7 +270,7 @@ if __name__ == "__main__":
     parser.add_argument('--ckpt', default='checkpoint/dino_vit_base_16.pth', type=str)
     parser.add_argument('--epoch', default=3, type=int)
     parser.add_argument('--distributed', default=True, type=str2bool)
-    parser.add_argument('--load_Best', default=False, type=str2bool)
+    parser.add_argument('--load_Best', default=True, type=str2bool)
     parser.add_argument('--load_Fine', default=False, type=str2bool)
     parser.add_argument('--train_resolution', default=320, type=int)
     parser.add_argument('--test_resolution', default=320, type=int)
