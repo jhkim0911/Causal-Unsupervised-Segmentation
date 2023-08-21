@@ -170,7 +170,7 @@ def main(rank, args, ngpus_per_node):
     segment = segment_detr_loader(args, rank)
 
     # optimizer
-    optimizer = torch.optim.AdamW(segment.parameters(), lr=1e-3 * ngpus_per_node, weight_decay=1e-3)
+    optimizer = torch.optim.Adam(segment.parameters(), lr=1e-3 * ngpus_per_node, weight_decay=1e-3)
     scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=2, gamma=0.5)
 
     # evaluation
