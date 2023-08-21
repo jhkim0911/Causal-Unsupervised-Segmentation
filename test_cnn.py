@@ -100,8 +100,6 @@ if __name__ == "__main__":
     parser.add_argument('--test_resolution', default=320, type=int)
     parser.add_argument('--batch_size', default=16, type=int)
     parser.add_argument('--num_workers', default=int(os.cpu_count() / 8), type=int)
-
-    # CUSS parameter
     parser.add_argument('--gpu', default='0', type=str)
     parser.add_argument('--num_codebook', default=2048, type=int)
 
