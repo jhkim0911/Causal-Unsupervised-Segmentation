@@ -269,7 +269,7 @@ def main(rank, args, ngpus_per_node):
 
 
     # optimizer
-    optimizer = torch.optim.AdamW(segment.parameters(), lr=1e-4 * ngpus_per_node)
+    optimizer = torch.optim.Adam(segment.parameters(), lr=1e-4 * ngpus_per_node)
 
     # tensorboard
     if (args.distributed == True) and (rank == 0):
