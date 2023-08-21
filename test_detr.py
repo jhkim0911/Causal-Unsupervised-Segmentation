@@ -86,12 +86,6 @@ def test_without_crf(args, net, segment, nice, test_loader, cmap):
             # nice evaluation
             _, desc_nice = nice.eval(cluster_preds, label)
 
-            # hungarian
-            hungarian_preds = nice.do_hungarian(cluster_preds)
-
-            # save images
-            # save_all(args, ind, img, label, cluster_preds, cluster_preds, hungarian_preds, cmap)
-
         # linear probe acc check
         pred_label = linear_logits.argmax(dim=1)
         flat_pred_label = pred_label.reshape(-1)

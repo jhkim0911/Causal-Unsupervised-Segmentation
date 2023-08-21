@@ -8,10 +8,10 @@ train_gpu="4,5,6,7"
 # ckpt="checkpoint/dino_vit_small_8.pth"
 # ckpt="checkpoint/dino_vit_small_16.pth"
 # ckpt="checkpoint/dino_vit_base_8.pth"
-ckpt="checkpoint/dino_vit_base_16.pth"
+# ckpt="checkpoint/dino_vit_base_16.pth"
 
 # ckpt="checkpoint/dinov2_vit_small_14.pth"
-# ckpt="checkpoint/dinov2_vit_base_14.pth"
+ckpt="checkpoint/dinov2_vit_base_14.pth"
 
 
 # Non-Changeable Variable
