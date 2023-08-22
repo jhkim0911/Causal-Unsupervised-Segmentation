@@ -5,23 +5,6 @@ import math
 
 from torch import randperm as perm
 from torch import cat
-
-    
-class HeadSegment(nn.Module):
-    def __init__(self, dim, reduced_dim):
-        super().__init__()
-        self.dim = dim
-        self.reduced_dim = reduced_dim
-
-        self.f1 = nn.Conv2d(self.dim, self.reduced_dim, (1, 1))
-        self.f2 = nn.Sequential(nn.Conv2d(self.dim, self.dim, (1, 1)),
-                                nn.ReLU(),
-                                nn.Conv2d(self.dim, self.reduced_dim, (1, 1)))
-        
-    def forward(self, feat, drop=nn.Identity()):
-        feat = Segment_DETR.transform(feat)
-        feat = self.f1(drop(feat)) + self.f2(drop(feat))
-        return Segment_DETR.untransform(feat)
     
 class ProjectionSegment(nn.Module):
     def __init__(self, func):
@@ -42,10 +25,6 @@ class DETR(nn.Module):
         self.self_attn = nn.MultiheadAttention(dim, nhead, dropout=dropout, batch_first=True)
         self.cross_attn = nn.MultiheadAttention(dim, nhead, dropout=dropout, batch_first=True)
 
-        self.linear1 = nn.Conv2d(dim, reduced_dim, kernel_size=1)
-        self.dropout = nn.Dropout(dropout)
-        self.linear2 = nn.Conv2d(reduced_dim, dim, kernel_size=1)
-
         self.norm1 = nn.LayerNorm(dim)
         self.norm2 = nn.LayerNorm(dim)
         self.norm3 = nn.LayerNorm(dim)
@@ -53,9 +32,13 @@ class DETR(nn.Module):
         self.dropout2 = nn.Dropout(dropout)
         self.dropout3 = nn.Dropout(dropout)
 
-
-        self.ffn = HeadSegment(dim, reduced_dim)
-
+        self.linear1 = nn.Conv2d(dim, reduced_dim, (1, 1))
+        self.linear2 = nn.Sequential(nn.Conv2d(dim, dim, (1, 1)),
+                                nn.ReLU(),
+                                nn.Conv2d(dim, dim, (1, 1)),
+                                nn.ReLU(),
+                                nn.Conv2d(dim, reduced_dim, (1, 1)))
+        
     def forward(self, tgt, memory, drop):
         pos_embed = self.pos_embed.unsqueeze(0)
         tgt2 = self.self_attn(tgt + pos_embed, 
@@ -68,12 +51,11 @@ class DETR(nn.Module):
                                value=memory)[0]
         tgt = tgt + self.dropout2(tgt2)
         tgt = self.norm2(tgt)
+        tgt = memory + self.dropout3(self.norm3(tgt))
         tgt = Segment_DETR.transform(tgt)
-        tgt2 = self.linear2(self.dropout(F.relu(self.linear1(tgt))))
-        tgt = tgt + self.dropout3(tgt2)
+        tgt = self.linear1(drop(tgt)) + self.linear2(drop(tgt))
         tgt = Segment_DETR.untransform(tgt)
-        tgt = memory + self.norm3(tgt)
-        return self.ffn(tgt, drop)
+        return tgt
 
 class Decoder(nn.Module):
     def __init__(self, args, codebook):

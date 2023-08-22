@@ -67,8 +67,8 @@ def train(args, net, segment, train_loader, optimizer):
         # optimizer
         optimizer.zero_grad()
         scaler.scale(loss).backward()
-        # scaler.unscale_(optimizer)
-        # torch.nn.utils.clip_grad_norm_(segment.parameters(), 1)
+        scaler.unscale_(optimizer)
+        torch.nn.utils.clip_grad_norm_(segment.parameters(), 1)
         scaler.step(optimizer)
         scaler.update()
 
@@ -130,7 +130,7 @@ def test(args, net, segment, nice, test_loader):
         total_acc += acc.item()
 
         # nice evaluation
-        metric, desc_nice = nice.eval(cluster_preds, label)
+        _, desc_nice = nice.eval(cluster_preds, label)
 
         # real-time print
         desc = f'[TEST] Acc (Linear): {100. * total_acc / (idx + 1):.1f}% | {desc_nice}'
