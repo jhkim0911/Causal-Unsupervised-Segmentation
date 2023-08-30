@@ -5,25 +5,28 @@ import math
 
 from torch import randperm as perm
 from torch import cat
-    
+
+
 class ProjectionSegment(nn.Module):
     def __init__(self, func):
         super().__init__()
         self.f = func
         
-    def forward(self, feat, drop=nn.Identity()):
+    def forward(self, feat):
         feat = Segment_DETR.transform(feat)
-        feat = self.f(drop(feat))
+        feat = self.f(feat)
         return Segment_DETR.untransform(feat)
-        
 
-class DETR(nn.Module):
-    def __init__(self, dim, reduced_dim, num_queries, nhead=1, dropout=0.1):
+class DETRDecoder(nn.Module):
+
+    def __init__(self, dim, reduced_dim, hidden_dim=2048, nhead=1, dropout=0.1):
         super().__init__()
-        self.pos_embed = nn.Parameter(torch.randn(num_queries, dim))
-        
-        self.self_attn = nn.MultiheadAttention(dim, nhead, dropout=dropout, batch_first=True)
-        self.cross_attn = nn.MultiheadAttention(dim, nhead, dropout=dropout, batch_first=True)
+        self.self_attn = nn.MultiheadAttention(dim, nhead, dropout=dropout)
+        self.multihead_attn = nn.MultiheadAttention(dim, nhead, dropout=dropout)
+
+        self.linear1 = nn.Linear(dim, hidden_dim)
+        self.dropout = nn.Dropout(dropout)
+        self.linear2 = nn.Linear(hidden_dim, dim)
 
         self.norm1 = nn.LayerNorm(dim)
         self.norm2 = nn.LayerNorm(dim)
@@ -32,30 +35,25 @@ class DETR(nn.Module):
         self.dropout2 = nn.Dropout(dropout)
         self.dropout3 = nn.Dropout(dropout)
 
-        self.linear1 = nn.Conv2d(dim, reduced_dim, (1, 1))
-        self.linear2 = nn.Sequential(nn.Conv2d(dim, dim, (1, 1)),
-                                nn.ReLU(),
-                                nn.Conv2d(dim, dim, (1, 1)),
-                                nn.ReLU(),
-                                nn.Conv2d(dim, reduced_dim, (1, 1)))
-        
-    def forward(self, tgt, memory, drop):
-        pos_embed = self.pos_embed.unsqueeze(0)
-        tgt2 = self.self_attn(tgt + pos_embed, 
-                              tgt + pos_embed, 
-                              value=tgt)[0]
+        self.f1 = nn.Conv2d(dim, reduced_dim, (1, 1))
+        self.f2 = nn.Sequential(nn.Conv2d(dim, dim, (1, 1)),
+                                  nn.ReLU(),
+                                  nn.Conv2d(dim, reduced_dim, (1, 1)))
+
+    def forward(self, tgt, memory, pos, drop):
+        q = k = tgt + pos
+        tgt2 = self.self_attn(q, k, value=tgt)[0]
         tgt = tgt + self.dropout1(tgt2)
         tgt = self.norm1(tgt)
-        tgt2 = self.cross_attn(query=tgt + pos_embed, 
-                               key=memory, 
-                               value=memory)[0]
+        tgt2 = self.multihead_attn(query=tgt + pos, key=memory, value=memory)[0]
         tgt = tgt + self.dropout2(tgt2)
         tgt = self.norm2(tgt)
-        tgt = memory + self.dropout3(self.norm3(tgt))
-        tgt = Segment_DETR.transform(tgt)
-        tgt = self.linear1(drop(tgt)) + self.linear2(drop(tgt))
-        tgt = Segment_DETR.untransform(tgt)
-        return tgt
+        tgt2 = self.linear2(self.dropout(F.relu(self.linear1(tgt))))
+        tgt = tgt + self.dropout3(tgt2)
+        tgt = memory + self.norm3(tgt)
+        tgt = Segment_DETR.transform(tgt.transpose(0, 1))
+        tgt = self.f1(drop(tgt)) + self.f2(drop(tgt))
+        return Segment_DETR.untransform(tgt)
 
 class Decoder(nn.Module):
     def __init__(self, args, codebook):
@@ -63,13 +61,15 @@ class Decoder(nn.Module):
         self.codebook = codebook
 
         # DETR decoder
-        self.decoder = DETR(args.dim, args.reduced_dim, args.num_queries)
+        self.query_pos = nn.Parameter(torch.randn(args.num_queries, args.dim))
+        self.detr = DETRDecoder(args.dim, args.reduced_dim)
 
     def forward(self, feat, drop=nn.Identity()):        
         discrete_query = Segment_DETR.vqt(feat, self.codebook)
-        dec_feat = self.decoder(discrete_query, feat, drop)
-        return dec_feat
-    
+        detr_feat = self.detr(discrete_query.transpose(0, 1), feat.transpose(0, 1), 
+                              self.query_pos.unsqueeze(1), drop)
+        return detr_feat
+
 
 class Segment_DETR(nn.Module):
     def __init__(self, args):
@@ -87,6 +87,9 @@ class Segment_DETR(nn.Module):
 
         # number of cluster
         self.num_codebook = args.num_codebook
+
+        # dropout
+        self.dropout = nn.Dropout(p=0.1)
         ##################################################################################
 
         ##################################################################################
@@ -99,9 +102,6 @@ class Segment_DETR(nn.Module):
         # DETR Decoder Head  
         self.head = Decoder(args, self.codebook)
         self.head_ema = Decoder(args, self.codebook)
-
-        # dropout
-        self.dropout = torch.nn.Dropout(p=0.1)
         ##################################################################################
         
 
@@ -419,7 +419,7 @@ class Segment_DETR(nn.Module):
         return self.linear_probe(z)
 
     @staticmethod
-    def stochastic_sampling(x, order=None, k=2):
+    def stochastic_sampling(x, order=None, k=4):
         """
         pooling
         """
@@ -435,13 +435,16 @@ class Segment_DETR(nn.Module):
         x = Segment_DETR.untransform(x_patch)
         return x, order
 
-    def forward_centroid(self, x, inference=False):
+    def forward_centroid(self, x, inference=False, alpha=3, crf=False):
         normed_features = F.normalize(self.transform(x.detach()), dim=1)
         normed_clusters = F.normalize(self.cluster_probe, dim=1)
         inner_products = torch.einsum("bchw,nc->bnhw", normed_features, normed_clusters)
 
         if inference:
             return torch.argmax(inner_products, dim=1)
+
+        if crf:
+            return torch.log_softmax(inner_products * alpha, dim=1)
 
         cluster_probs = F.one_hot(torch.argmax(inner_products, dim=1), self.cluster_probe.shape[0]) \
             .permute(0, 3, 1, 2).to(torch.float32)

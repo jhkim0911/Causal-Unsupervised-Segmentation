@@ -25,9 +25,9 @@ class ProjectionSegment(nn.Module):
         super().__init__()
         self.f = func
         
-    def forward(self, feat, drop=nn.Identity()):
+    def forward(self, feat):
         feat = Segment_CNN.transform(feat)
-        feat = self.f(drop(feat))
+        feat = self.f(feat)
         return Segment_CNN.untransform(feat)
 
 class Segment_CNN(nn.Module):
@@ -382,7 +382,7 @@ class Segment_CNN(nn.Module):
         return self.linear_probe(z)
 
     @staticmethod
-    def stochastic_sampling(x, order=None, k=2):
+    def stochastic_sampling(x, order=None, k=4):
         """
         pooling
         """
@@ -398,13 +398,16 @@ class Segment_CNN(nn.Module):
         x = Segment_CNN.untransform(x_patch)
         return x, order
 
-    def forward_centroid(self, x, inference=False):
+    def forward_centroid(self, x, inference=False, alpha=3, crf=False):
         normed_features = F.normalize(self.transform(x.detach()), dim=1)
         normed_clusters = F.normalize(self.cluster_probe, dim=1)
         inner_products = torch.einsum("bchw,nc->bnhw", normed_features, normed_clusters)
 
         if inference:
             return torch.argmax(inner_products, dim=1)
+
+        if crf:
+            return torch.log_softmax(inner_products * alpha, dim=1)
 
         cluster_probs = F.one_hot(torch.argmax(inner_products, dim=1), self.cluster_probe.shape[0]) \
             .permute(0, 3, 1, 2).to(torch.float32)

@@ -1,31 +1,48 @@
 #!/bin/bash
-dataset="cityscapes"
-# dataset="cocostuff27"
+# dataset="pascalvoc"
+# dataset="cityscapes"
+dataset="cocostuff27"
 
 # train_gpu="0,1,2,3"
 train_gpu="4,5,6,7"
 
+# Checkpoint Candidates
+# DINO
 # ckpt="checkpoint/dino_vit_small_8.pth"
 # ckpt="checkpoint/dino_vit_small_16.pth"
-ckpt="checkpoint/dino_vit_base_8.pth"
-# ckpt="checkpoint/dino_vit_base_16.pth"
+# ckpt="checkpoint/dino_vit_base_8.pth"
+ckpt="checkpoint/dino_vit_base_16.pth"
 
+# DINOv2
 # ckpt="checkpoint/dinov2_vit_small_14.pth"
 # ckpt="checkpoint/dinov2_vit_base_14.pth"
 
+# iBOT
+# ckpt="checkpoint/ibot_vit_small_16.pth"
+# ckpt="checkpoint/ibot_vit_base_16.pth"
+
+# msn
+# ckpt="checkpoint/msn_vit_small_16.pth"
+
+# MAE
+# ckpt="checkpoint/mae_vit_base_16.pth"
 
 # Non-Changeable Variable
 test_gpu="${train_gpu:0}"
-port=$(($RANDOM%100+1200))
+port=$(($RANDOM%1000+1000))
+
+
+# Mediator
+# python train_mediator.py --dataset $dataset --ckpt $ckpt --gpu $train_gpu --port $port
+
 
 # CNN
-# epoch=2
-# python train_front_door_cnn.py --dataset $dataset --ckpt $ckpt --gpu $train_gpu --port $port && python fine_tuning_cnn.py --dataset $dataset --epoch $epoch --ckpt $ckpt --gpu $train_gpu --port $port && python test_cnn.py --dataset $dataset --ckpt $ckpt --gpu $test_gpu
+# python train_front_door_cnn.py --dataset $dataset --ckpt $ckpt --gpu $train_gpu --port $port && python fine_tuning_cnn.py --dataset $dataset --epoch 1 --ckpt $ckpt --gpu $train_gpu --port $port && python test_cnn.py --dataset $dataset --ckpt $ckpt --gpu $test_gpu
+# python fine_tuning_cnn.py --dataset $dataset --epoch 1 --ckpt $ckpt --gpu $train_gpu --port $port && python test_cnn.py --dataset $dataset --ckpt $ckpt --gpu $test_gpu
 
 # DETR
-epoch=3
-# python train_front_door_detr.py --dataset $dataset --ckpt $ckpt --gpu $train_gpu --port $port && python fine_tuning_detr.py --epoch $epoch --dataset $dataset --ckpt $ckpt --gpu $train_gpu --port $port && python test_detr.py --dataset $dataset --ckpt $ckpt --gpu $test_gpu
-python fine_tuning_detr.py --epoch $epoch --dataset $dataset --ckpt $ckpt --gpu $train_gpu --port $port && python test_detr.py --dataset $dataset --ckpt $ckpt --gpu $test_gpu
+# python train_front_door_detr.py --dataset $dataset --ckpt $ckpt --gpu $train_gpu --port $port && python fine_tuning_detr.py --epoch 5 --dataset $dataset --ckpt $ckpt --gpu $train_gpu --port $port && python test_detr.py --dataset $dataset --ckpt $ckpt --gpu $test_gpu
+python fine_tuning_detr.py --epoch 5 --dataset $dataset --ckpt $ckpt --gpu $train_gpu --port $port && python test_detr.py --dataset $dataset --ckpt $ckpt --gpu $test_gpu
 
 # only test
 # python test_cnn.py --dataset $dataset --ckpt $ckpt --gpu $test_gpu

@@ -64,13 +64,13 @@ def train(args, net, segment, train_loader, optimizer, writer, rank):
             ######################################################################
             # teacher
             seg_feat_ema = segment.head_ema(feat, drop=segment.dropout)
-            proj_feat_ema = segment.projection_head_ema(seg_feat_ema, drop=segment.dropout)
+            proj_feat_ema = segment.projection_head_ema(seg_feat_ema)
             ######################################################################
 
             ######################################################################
             # student
             seg_feat = segment.head(feat, drop=segment.dropout)
-            proj_feat = segment.projection_head(seg_feat, drop=segment.dropout)
+            proj_feat = segment.projection_head(seg_feat)
             ######################################################################
 
             ######################################################################
@@ -353,7 +353,7 @@ if __name__ == "__main__":
     parser.add_argument('--num_codebook', default=2048, type=int)
 
     # model parameter
-    parser.add_argument('--reduced_dim', default=70, type=int)
+    parser.add_argument('--reduced_dim', default=90, type=int)
     parser.add_argument('--projection_dim', default=2048, type=int)
 
     args = parser.parse_args()

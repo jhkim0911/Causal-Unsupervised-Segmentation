@@ -7,6 +7,7 @@ from scipy.io import loadmat
 from torch.utils.data import DataLoader
 from torch.utils.data import Dataset
 from torchvision.datasets.cityscapes import Cityscapes
+from torchvision.datasets import VOCSegmentation
 from torchvision.transforms.functional import to_pil_image
 from utils.utils import *
 
@@ -18,10 +19,8 @@ def dataloader(args, no_ddp_train_shuffle=True):
         args.n_classes = 27
     elif args.dataset == "cityscapes":
         args.n_classes = 27
-    elif args.dataset == "potsdam":
-        args.n_classes = 0
-    elif args.dataset == "potsdamraw":
-        args.n_classes = 0
+    elif args.dataset == "pascalvoc":
+        args.n_classes = 21
 
     # train dataset
     train_dataset = SegDataset(
@@ -50,7 +49,7 @@ def dataloader(args, no_ddp_train_shuffle=True):
     if args.distributed: test_sampler = DistributedSampler(test_dataset, shuffle=False)
 
     # test dataloader
-    test_loader = DataLoader(test_dataset, args.batch_size // 4,
+    test_loader = DataLoader(test_dataset, args.batch_size,
                              shuffle=False, num_workers=args.num_workers,
                              pin_memory=False, sampler=test_sampler if args.distributed else None)
 
@@ -262,7 +261,6 @@ class Coco(Dataset):
     def __len__(self):
         return len(self.image_files)
 
-
 class CityscapesSeg(Dataset):
     def __init__(self, root, image_set, transform, target_transform):
         super(CityscapesSeg, self).__init__()
@@ -308,6 +306,34 @@ class CityscapesSeg(Dataset):
         return len(self.inner_loader)
 
 
+class PascalVOC(VOCSegmentation):
+    def __init__(self, root, year, image_set, download, transforms, target_transforms):
+        super().__init__(root, year=year, image_set=image_set, download=download, transforms=transforms)
+        self.target_transforms=target_transforms
+    def __getitem__(self, idx):
+        image = Image.open(self.images[idx]).convert('RGB')
+        label = Image.open(self.masks[idx])
+
+        if self.transforms is not None:
+            seed = random.randint(0, 2 ** 32)
+            self._set_seed(seed); image = self.transforms(image)
+            self._set_seed(seed); label = self.target_transforms(label)
+            label[label > 20] = -1
+        return image, label
+    
+    def _set_seed(self, seed):
+        random.seed(seed)
+        torch.manual_seed(seed)
+
+    @staticmethod
+    def PascalVOCGenerator(root, image_set, transform, target_transform):
+        return PascalVOC(join(root, "pascalvoc"), 
+                    year='2012', 
+                    image_set=image_set, 
+                    download=False, 
+                    transforms=transform,
+                    target_transforms=target_transform)
+
 class SegDataset(Dataset):
     def __init__(self,
                  pytorch_data_dir,
@@ -348,6 +374,10 @@ class SegDataset(Dataset):
             extra_args = dict(coarse_labels=False, subset=None, exclude_things=False)
             if image_set == "val":
                 extra_args["subset"] = 7
+        elif dataset_name == "pascalvoc":
+            self.n_classes = 21
+            dataset_class = PascalVOC.PascalVOCGenerator
+            extra_args = dict()
         else:
             raise ValueError("Unknown dataset: {}".format(dataset_name))
 

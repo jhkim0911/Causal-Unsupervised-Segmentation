@@ -24,17 +24,16 @@ def test(args, net, segment, nice, test_loader, cmap):
                 feat_flip = net(img.flip(dims=[3]))[:, 1:, :]
             seg_feat = segment.transform(segment.head_ema(feat))
             seg_feat_flip = segment.transform(segment.head_ema(feat_flip))
-            seg_feat_ema = segment.untransform((seg_feat + seg_feat_flip.flip(dims=[3])) / 2)
+            seg_feat = segment.untransform((seg_feat + seg_feat_flip.flip(dims=[3])) / 2)
 
             # interp feat
-            interp_seg_feat = F.interpolate(segment.transform(seg_feat_ema), label.shape[-2:], mode='bilinear', align_corners=False)
+            interp_seg_feat = F.interpolate(segment.transform(seg_feat), label.shape[-2:], mode='bilinear', align_corners=False)
 
             # cluster preds
-            cluster_preds = segment.forward_centroid(segment.untransform(interp_seg_feat), inference=True)
+            cluster_preds = segment.forward_centroid(segment.untransform(interp_seg_feat), crf=True)
 
             # crf
-            onehot = F.one_hot(cluster_preds.to(torch.int64), args.n_classes).to(torch.float32)
-            crf_preds = do_crf(pool, img, onehot.permute(0, 3, 1, 2)).argmax(1).cuda()
+            crf_preds = do_crf(pool, img, cluster_preds).argmax(1).cuda()
 
             # nice evaluation
             _, desc_nice = nice.eval(crf_preds, label)
@@ -43,7 +42,7 @@ def test(args, net, segment, nice, test_loader, cmap):
             hungarian_preds = nice.do_hungarian(crf_preds)
 
             # save images
-            save_all(args, ind, img, label, cluster_preds, crf_preds, hungarian_preds, cmap, is_detr=True)
+            save_all(args, ind, img, label, cluster_preds.argmax(dim=1), crf_preds, hungarian_preds, cmap, is_detr=True)
 
             # real-time print
             desc = f'{desc_nice}'
@@ -54,7 +53,7 @@ def test(args, net, segment, nice, test_loader, cmap):
 
 
 
-def test_without_crf(args, net, segment, nice, test_loader, cmap):
+def test_without_crf(args, net, segment, nice, test_loader):
     segment.eval()
 
     total_acc = 0
@@ -118,17 +117,16 @@ def test_linear_without_crf(args, net, segment, nice, test_loader):
                 feat_flip = net(img.flip(dims=[3]))[:, 1:, :]
             seg_feat = segment.transform(segment.head_ema(feat))
             seg_feat_flip = segment.transform(segment.head_ema(feat_flip))
-            seg_feat_ema = segment.untransform((seg_feat + seg_feat_flip.flip(dims=[3])) / 2)
+            seg_feat = segment.untransform((seg_feat + seg_feat_flip.flip(dims=[3])) / 2)
 
             # interp feat
-            interp_seg_feat = F.interpolate(segment.transform(seg_feat_ema), label.shape[-2:], mode='bilinear', align_corners=False)
+            interp_seg_feat = F.interpolate(segment.transform(seg_feat), label.shape[-2:], mode='bilinear', align_corners=False)
 
             # linear probe interp feat
             linear_logits = segment.linear(segment.untransform(interp_seg_feat))
 
             # cluster preds
-            # cluster_preds = linear_logits.argmax(dim=1)
-            cluster_preds = torch.log_softmax(linear_logits, dim=1)
+            cluster_preds = linear_logits.argmax(dim=1)
 
             # nice evaluation
             _, desc_nice = nice.eval(cluster_preds, label)
@@ -159,22 +157,19 @@ def test_linear(args, net, segment, nice, test_loader):
                 feat_flip = net(img.flip(dims=[3]))[:, 1:, :]
             seg_feat = segment.transform(segment.head_ema(feat))
             seg_feat_flip = segment.transform(segment.head_ema(feat_flip))
-            seg_feat_ema = segment.untransform((seg_feat + seg_feat_flip.flip(dims=[3])) / 2)
-
+            seg_feat = segment.untransform((seg_feat + seg_feat_flip.flip(dims=[3])) / 2)
 
             # interp feat
-            interp_seg_feat = F.interpolate(segment.transform(seg_feat_ema), label.shape[-2:], mode='bilinear', align_corners=False)
+            interp_seg_feat = F.interpolate(segment.transform(seg_feat), label.shape[-2:], mode='bilinear', align_corners=False)
 
             # linear probe interp feat
             linear_logits = segment.linear(segment.untransform(interp_seg_feat))
 
             # cluster preds
-            # cluster_preds = linear_logits.argmax(dim=1)
             cluster_preds = torch.log_softmax(linear_logits, dim=1)
 
             # crf
-            onehot = F.one_hot(cluster_preds.to(torch.int64), args.n_classes).to(torch.float32)
-            crf_preds = do_crf(pool, img, onehot.permute(0, 3, 1, 2)).argmax(1).cuda()
+            crf_preds = do_crf(pool, img, cluster_preds).argmax(1).cuda()
 
             # nice evaluation
             _, desc_nice = nice.eval(crf_preds, label)
@@ -243,13 +238,12 @@ def main(rank, args):
     print(f'# of Parameters: {segment.num_param/10**6:.2f}(M)') 
 
     # post-processing with crf and hungarian matching
-    test_without_crf(
-        args,
-        net.module if args.distributed else net,
-        segment.module if args.distributed else segment,
-        nice,
-        test_loader,
-        cmap)
+    # test_without_crf(
+    #     args,
+    #     net.module if args.distributed else net,
+    #     segment.module if args.distributed else segment,
+    #     nice,
+    #     test_loader)
 
     # post-processing with crf and hungarian matching
     test(
@@ -261,19 +255,19 @@ def main(rank, args):
         cmap)
     
     # post-processing with crf and hungarian matching
-    # test_linear_without_crf(
-    #     args,
-    #     net.module if args.distributed else net,
-    #     segment.module if args.distributed else segment,
-    #     nice,
-    #     test_loader)
+    test_linear_without_crf(
+        args,
+        net.module if args.distributed else net,
+        segment.module if args.distributed else segment,
+        nice,
+        test_loader)
     
-    # test_linear(
-    #     args,
-    #     net.module if args.distributed else net,
-    #     segment.module if args.distributed else segment,
-    #     nice,
-    #     test_loader)
+    test_linear(
+        args,
+        net.module if args.distributed else net,
+        segment.module if args.distributed else segment,
+        nice,
+        test_loader)
 
 
 if __name__ == "__main__":
@@ -283,7 +277,7 @@ if __name__ == "__main__":
     
     # model parameter
     parser.add_argument('--data_dir', default='/mnt/hard2/lbk-iccv/datasets', type=str)
-    parser.add_argument('--dataset', default='cityscapes', type=str)
+    parser.add_argument('--dataset', default='cocostuff27', type=str)
     parser.add_argument('--port', default='12355', type=str)
     parser.add_argument('--ckpt', default='checkpoint/dino_vit_small_16.pth', type=str)
     parser.add_argument('--distributed', default=False, type=str2bool)
@@ -291,13 +285,13 @@ if __name__ == "__main__":
     parser.add_argument('--load_Fine', default=True, type=str2bool)
     parser.add_argument('--train_resolution', default=320, type=int)
     parser.add_argument('--test_resolution', default=320, type=int)
-    parser.add_argument('--batch_size', default=4, type=int)
+    parser.add_argument('--batch_size', default=16, type=int)
     parser.add_argument('--num_workers', default=int(os.cpu_count() / 8), type=int)
-    parser.add_argument('--gpu', default='4', type=str)
+    parser.add_argument('--gpu', default='0', type=str)
     parser.add_argument('--num_codebook', default=2048, type=int)
 
     # model parameter
-    parser.add_argument('--reduced_dim', default=70, type=int)
+    parser.add_argument('--reduced_dim', default=90, type=int)
     parser.add_argument('--projection_dim', default=2048, type=int)
 
     args = parser.parse_args()
@@ -319,3 +313,5 @@ if __name__ == "__main__":
 
     # first gpu index is activated once there are several gpu in args.gpu
     main(rank=gpu_list[0], args=args)
+
+# %%

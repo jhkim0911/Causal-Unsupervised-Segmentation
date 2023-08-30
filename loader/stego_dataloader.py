@@ -7,6 +7,7 @@ from scipy.io import loadmat
 from torch.utils.data import DataLoader
 from torch.utils.data import Dataset
 from torchvision.datasets.cityscapes import Cityscapes
+from torchvision.datasets import VOCSegmentation
 from torchvision.transforms.functional import to_pil_image
 from tqdm import tqdm
 
@@ -22,10 +23,8 @@ def stego_dataloader(args, no_ddp_train_shuffle=True):
         args.n_classes = 27
     elif args.dataset == "cityscapes":
         args.n_classes = 27
-    elif args.dataset == "potsdam":
-        args.n_classes = 0
-    elif args.dataset == "potsdamraw":
-        args.n_classes = 0
+    elif args.dataset == "pascalvoc":
+        args.n_classes = 21
 
     # train dataset
     train_dataset = ContrastiveSegDataset(
@@ -49,18 +48,13 @@ def stego_dataloader(args, no_ddp_train_shuffle=True):
                               shuffle=False if args.distributed else no_ddp_train_shuffle, num_workers=args.num_workers,
                               pin_memory=True, sampler=train_sampler if args.distributed else None)
 
-    if args.dataset == "voc":
-        val_loader_crop = None
-    else:
-        val_loader_crop = "center"
-
     test_dataset = ContrastiveSegDataset(
         pytorch_data_dir=args.data_dir,
         dataset_name=args.dataset,
         crop_type=None,
         image_set="val",
-        transform=get_transform(args.test_resolution, False, val_loader_crop),
-        target_transform=get_transform(args.test_resolution, True, val_loader_crop),
+        transform=get_transform(args.test_resolution, False, "center"),
+        target_transform=get_transform(args.test_resolution, True, "center"),
         mask=True,
         cfg=args,
     )
@@ -478,6 +472,33 @@ class MaterializedDataset(Dataset):
     def __getitem__(self, ind):
         return self.materialized[ind]
 
+class PascalVOC(VOCSegmentation):
+    def __init__(self, root, year, image_set, download, transforms, target_transforms):
+        super().__init__(root, year=year, image_set=image_set, download=download, transforms=transforms)
+        self.target_transforms=target_transforms
+    def __getitem__(self, idx):
+        image = Image.open(self.images[idx]).convert('RGB')
+        label = Image.open(self.masks[idx])
+
+        if self.transforms is not None:
+            seed = random.randint(0, 2 ** 32)
+            self._set_seed(seed); image = self.transforms(image)
+            self._set_seed(seed); label = self.target_transforms(label)
+            label[label > 20] = -1
+        return image, label
+    
+    def _set_seed(self, seed):
+        random.seed(seed)
+        torch.manual_seed(seed)
+
+    @staticmethod
+    def PascalVOCGenerator(root, image_set, transform, target_transform):
+        return PascalVOC(join(root, "pascalvoc"), 
+                    year='2012', 
+                    image_set=image_set, 
+                    download=False, 
+                    transforms=transform,
+                    target_transforms=target_transform)
 
 class ContrastiveSegDataset(Dataset):
     def __init__(self,
@@ -546,6 +567,10 @@ class ContrastiveSegDataset(Dataset):
             extra_args = dict(coarse_labels=False, subset=None, exclude_things=False)
             if image_set == "val":
                 extra_args["subset"] = 7
+        elif dataset_name == "pascalvoc":
+            self.n_classes = 21
+            dataset_class = PascalVOC.PascalVOCGenerator
+            extra_args = dict()
         else:
             raise ValueError("Unknown dataset: {}".format(dataset_name))
 

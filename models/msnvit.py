@@ -234,7 +234,8 @@ class VisionTransformer(nn.Module):
         pos_embed = self.interpolate_pos_encoding(x, self.pos_embed)
         x = x + pos_embed
         x = self.pos_drop(x)
-        x = self.blocks(x)
+        for f in self.blocks:
+            x = f(x)
         x = self.norm(x)
         return x
 

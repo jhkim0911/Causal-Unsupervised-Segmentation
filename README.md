@@ -22,18 +22,16 @@ Further, we explain concrete implementation beyond the description of the main p
 ## Download Visual Quality and Checkpoints of CUSS (Under preparation for Sharable Link, The updated will be simultaneously completed within a few day!)
 
 You can download the checkpoint files including CUSS-trained parameters based on
-[DINO](https://openaccess.thecvf.com/content/ICCV2021/papers/Caron_Emerging_Properties_in_Self-Supervised_Vision_Transformers_ICCV_2021_paper.pdf), [DINOv2](https://arxiv.org/pdf/2304.07193.pdf), [MAE](https://openaccess.thecvf.com/content/CVPR2022/papers/He_Masked_Autoencoders_Are_Scalable_Vision_Learners_CVPR_2022_paper.pdf), [MoCov3](https://openaccess.thecvf.com/content/ICCV2021/papers/Chen_An_Empirical_Study_of_Training_Self-Supervised_Vision_Transformers_ICCV_2021_paper.pdf), [iBOT](https://openreview.net/pdf?id=ydopy-e6Dg), [Unicom](https://openreview.net/pdf?id=3YFDsSRSxB-), [MSN](https://www.ecva.net/papers/eccv_2022/papers_ECCV/papers/136910442.pdf)
+[DINO](https://openaccess.thecvf.com/content/ICCV2021/papers/Caron_Emerging_Properties_in_Self-Supervised_Vision_Transformers_ICCV_2021_paper.pdf), [DINOv2](https://arxiv.org/pdf/2304.07193.pdf), [iBOT](https://openreview.net/pdf?id=ydopy-e6Dg), [MSN](https://www.ecva.net/papers/eccv_2022/papers_ECCV/papers/136910442.pdf), [MAE](https://openaccess.thecvf.com/content/CVPR2022/papers/He_Masked_Autoencoders_Are_Scalable_Vision_Learners_CVPR_2022_paper.pdf)
 in self-supervised vision transformer framework.
 If you want to download the pretrained models of DINO in various structures the following CUSS uses,
 you can download them in the following links:
 
 * [DINO](https://github.com/facebookresearch/dino), ICCV 2021
 * [DINOv2](https://github.com/facebookresearch/dinov2), ArXiv 2023
-* [MAE](https://github.com/facebookresearch/mae), CVPR 2022
-* [MoCov3](https://github.com/facebookresearch/moco-v3), ICCV 2021
 * [iBOT](https://github.com/bytedance/ibot), ICLR 2022
-* [Unicom](https://github.com/deepglint/unicom), ICLR 2023
 * [MSN](https://github.com/facebookresearch/msn), ECCV 2022
+* [MAE](https://github.com/facebookresearch/mae), CVPR 2022
 
 ---
 
@@ -45,14 +43,10 @@ you can download them in the following links:
 |  COCO-Stuff  | DINO+**CUSS** | ViT-B/16 |  28.8   |  67.4   |  [[link]]()   | [[link]]() |
 |  COCO-Stuff  | DINOv2+**CUSS** | ViT-S/14 |  27.3   |  63.8   |  [[link]]()   | [[link]]() |
 |  COCO-Stuff  | DINOv2+**CUSS** | ViT-B/14 |  28.8   |  67.4   |  [[link]]()   | [[link]]() |
-|  COCO-Stuff  | MAE+**CUSS** | ViT-B/16 |  28.8   |  67.4   |  [[link]]()   | [[link]]() |
-|  COCO-Stuff  | MoCov3+**CUSS** | ViT-S/16 |  28.8   |  67.4   |  [[link]]()   | [[link]]() |
-|  COCO-Stuff  | MoCov3+**CUSS** | ViT-B/16 |  28.8   |  67.4   |  [[link]]()   | [[link]]() |
 |  COCO-Stuff  | iBOT+**CUSS** | ViT-S/16 |  28.8   |  67.4   |  [[link]]()   | [[link]]() |
 |  COCO-Stuff  | iBOT+**CUSS** | ViT-B/16 |  28.8   |  67.4   |  [[link]]()   | [[link]]() |
-|  COCO-Stuff  | Unicom+**CUSS** | ViT-B/16 |  28.8   |  67.4   |  [[link]]()   | [[link]]() |
 |  COCO-Stuff  | MSN+**CUSS** | ViT-S/16 |  28.8   |  67.4   |  [[link]]()   | [[link]]() |
-|  COCO-Stuff  | MSN+**CUSS** | ViT-B/16 |  28.8   |  67.4   |  [[link]]()   | [[link]]() |
+|  COCO-Stuff  | MAE+**CUSS** | ViT-B/16 |  28.8   |  67.4   |  [[link]]()   | [[link]]() |
 
 
 
@@ -66,14 +60,10 @@ you can download them in the following links:
 |  Cityscapes  | DINO+**CUSS** | ViT-B/16   |  17.3   |  80.3   | [[link]]()  | [[link]]() |
 |  Cityscapes  | DINOv2+**CUSS** | ViT-S/14 |  27.3   |  63.8   |  [[link]]()   | [[link]]() |
 |  Cityscapes  | DINOv2+**CUSS** | ViT-B/14 |  28.8   |  67.4   |  [[link]]()   | [[link]]() |
-|  Cityscapes  | MAE+**CUSS** | ViT-B/16 |  28.8   |  67.4   |  [[link]]()   | [[link]]() |
-|  Cityscapes  | MoCov3+**CUSS** | ViT-S/16 |  28.8   |  67.4   |  [[link]]()   | [[link]]() |
-|  Cityscapes  | MoCov3+**CUSS** | ViT-B/16 |  28.8   |  67.4   |  [[link]]()   | [[link]]() |
 |  Cityscapes  | iBOT+**CUSS** | ViT-S/16 |  28.8   |  67.4   |  [[link]]()   | [[link]]() |
 |  Cityscapes  | iBOT+**CUSS** | ViT-B/16 |  28.8   |  67.4   |  [[link]]()   | [[link]]() |
-|  Cityscapes  | Unicom+**CUSS** | ViT-B/16 |  28.8   |  67.4   |  [[link]]()   | [[link]]() |
 |  Cityscapes  | MSN+**CUSS** | ViT-S/16 |  28.8   |  67.4   |  [[link]]()   | [[link]]() |
-|  Cityscapes  | MSN+**CUSS** | ViT-B/16 |  28.8   |  67.4   |  [[link]]()   | [[link]]() |
+|  Cityscapes  | MAE+**CUSS** | ViT-B/16 |  28.8   |  67.4   |  [[link]]()   | [[link]]() |
 
 
 
@@ -86,10 +76,11 @@ you can download them in the following links:
     │   ├── netloader.py                # Self-Supervised Pretrained Model Loader & Segmentation Head Loader
     │   └── stego_dataloader.py         # Dataloader Thanks to STEGO [ICLR 2022]
     │
-    ├── models                          # Model Design of Self-Supervised Pretrained: [DINO/Moco-v3/MAE]
+    ├── models                          # Model Design of Self-Supervised Pretrained: [DINO/DINOv2/iBOT/MAE/MSN]
     │   ├── dinomaevit.py               # ViT Structure of DINO and MAE
     │   ├── dinov2vit.py                # ViT Structure of DINOv2
-    │   └── mocov3vit.py                # ViT Structure of Moco-v3
+    │   ├── ibotvit.py                  # ViT Structure of iBOT
+    │   └── msnvit.py                   # ViT Structure of MSN
     │
     ├── modules                         # Segmentation Head and Its Necessary Function
     │   └── segment_cnn.py              # [CNN] Including Tools with Generating Concept Book and Contrastive Learning
@@ -147,7 +138,7 @@ python train_front_door_detr.py --dataset $dataset --ckpt $ckpt --gpu $train_gpu
 ### (STEP 1): Generating Mediator based on Modularity
 
 ```shell script
-python train_mediator.py # DINO/DINOv2/MoCov3/MAE
+python train_mediator.py # DINO/DINOv2/iBOT/MAE/MSN
 ```
 
 ### (STEP 2): Frontdoor Adjustment through Contrastive Learning

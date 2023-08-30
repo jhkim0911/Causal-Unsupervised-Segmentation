@@ -234,7 +234,6 @@ import torch.nn.functional as F
 import torchvision.transforms.functional as VF
 
 def dense_crf(image_tensor: torch.FloatTensor, output_logits: torch.FloatTensor, max_iter: int):
-    # MAX_ITER = 10
     MAX_ITER = max_iter
     POS_W = 3
     POS_XY_STD = 1
@@ -323,6 +322,9 @@ class ToTargetTensor(object):
     def __call__(self, target):
         return torch.as_tensor(np.array(target), dtype=torch.int64).unsqueeze(0)
 
+
+
+from torchvision.transforms import InterpolationMode
 # DATA Transformation
 def get_transform(res, is_label, crop_type):
     if crop_type == "center":
@@ -335,11 +337,11 @@ def get_transform(res, is_label, crop_type):
     else:
         raise ValueError("Unknown Cropper {}".format(crop_type))
     if is_label:
-        return transforms.Compose([transforms.Resize(res),
+        return transforms.Compose([transforms.Resize(res, interpolation=InterpolationMode.NEAREST),
                           cropper,
                           ToTargetTensor()])
     else:
-        return transforms.Compose([transforms.Resize(res),
+        return transforms.Compose([transforms.Resize(res, interpolation=InterpolationMode.NEAREST),
                           cropper,
                           transforms.ToTensor()])
 

@@ -252,7 +252,8 @@ class VisionTransformer(nn.Module):
     def forward(self, x):
         # mim
         x = self.prepare_tokens(x)
-        x = self.blocks(x)
+        for f in self.blocks:
+            x = f(x)
         x = self.norm(x)
         return x
 

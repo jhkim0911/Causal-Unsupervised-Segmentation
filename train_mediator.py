@@ -111,7 +111,7 @@ def main(rank, args, ngpus_per_node):
     segment = segment_cnn_loader(args, rank)
 
     # optimizer and scheduler
-    optimizer = torch.optim.AdamW(segment.parameters(), lr=1e-4 * ngpus_per_node)
+    optimizer = torch.optim.AdamW(segment.parameters(), lr=1e-4)
     scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.2)
 
     # evaluation
@@ -181,17 +181,17 @@ if __name__ == "__main__":
     parser.add_argument('--load_Fine', default=False, type=str2bool)
     parser.add_argument('--train_resolution', default=320, type=int)
     parser.add_argument('--test_resolution', default=320, type=int)
-    parser.add_argument('--batch_size', default=8, type=int)
+    parser.add_argument('--batch_size', default=16, type=int)
     parser.add_argument('--num_workers', default=int(os.cpu_count() / 8), type=int)
 
     # dataset and baseline
     parser.add_argument('--data_dir', default='/mnt/hard2/lbk-iccv/datasets', type=str)
-    parser.add_argument('--dataset', default='cityscapes', type=str)
-    parser.add_argument('--ckpt', default='checkpoint/dinov2_vit_small_14.pth', type=str)
+    parser.add_argument('--dataset', default='pascalvoc', type=str)
+    parser.add_argument('--ckpt', default='checkpoint/dino_vit_base_16.pth', type=str)
 
     # DDP
     parser.add_argument('--gpu', default='0,1,2,3', type=str)
-    parser.add_argument('--port', default='12359', type=str)
+    parser.add_argument('--port', default='12355', type=str)
 
     # parameter
     parser.add_argument('--grid', default='yes', type=str2bool)
