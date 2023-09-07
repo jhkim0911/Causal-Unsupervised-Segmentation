@@ -7,7 +7,7 @@ from modules.segment_module import transform, untransform, compute_modularity_ba
 import torch.distributed as dist
 import torch.multiprocessing as mp
 import torch.backends.cudnn as cudnn
-from loader.stego_dataloader import stego_dataloader
+from loader.dataloader import dataloader
 from torch.cuda.amp import autocast, GradScaler
 from loader.netloader import network_loader, segment_mlp_loader, cluster_loader
 
@@ -166,7 +166,7 @@ def main(rank, args, ngpus_per_node):
     print_argparse(args, rank)
 
     # dataset loader
-    train_loader, test_loader, sampler = stego_dataloader(args)
+    train_loader, test_loader, sampler = dataloader(args)
 
     # network loader
     net = network_loader(args, rank)

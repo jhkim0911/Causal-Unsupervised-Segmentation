@@ -5,7 +5,7 @@ from modules.segment_module import HeadSegment, ProjectionSegment
 
 class Segment_MLP(nn.Module):
     def __init__(self, args):
-        super(Segment_MLP, self).__init__()
+        super().__init__()
 
         ##################################################################################
         # dropout

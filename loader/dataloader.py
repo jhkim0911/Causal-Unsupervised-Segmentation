@@ -3,15 +3,16 @@ from os.path import join
 
 import torch.multiprocessing
 from PIL import Image
-from scipy.io import loadmat
 from torch.utils.data import DataLoader
 from torch.utils.data import Dataset
 from torchvision.datasets.cityscapes import Cityscapes
 from torchvision.datasets import VOCSegmentation
-from torchvision.transforms.functional import to_pil_image
+
+
 from utils.utils import *
 
 from torch.utils.data.distributed import DistributedSampler
+
 
 def dataloader(args, no_ddp_train_shuffle=True):
 
@@ -21,14 +22,23 @@ def dataloader(args, no_ddp_train_shuffle=True):
         args.n_classes = 27
     elif args.dataset == "pascalvoc":
         args.n_classes = 21
+    elif args.dataset == "coco80":
+        args.n_classes = 80
+    elif args.dataset == "coco171":
+        args.n_classes = 171
 
     # train dataset
-    train_dataset = SegDataset(
+    train_dataset = ContrastiveSegDataset(
         pytorch_data_dir=args.data_dir,
         dataset_name=args.dataset,
+        crop_type="five",
         image_set="train",
         transform=get_transform(args.train_resolution, False, "center"),
         target_transform=get_transform(args.train_resolution, True, "center"),
+        num_neighbors=7,
+        mask=True,
+        pos_images=True,
+        pos_labels=True
     )
 
     if args.distributed: train_sampler = DistributedSampler(train_dataset, shuffle=True)
@@ -38,12 +48,14 @@ def dataloader(args, no_ddp_train_shuffle=True):
                               shuffle=False if args.distributed else no_ddp_train_shuffle, num_workers=args.num_workers,
                               pin_memory=True, sampler=train_sampler if args.distributed else None)
 
-    test_dataset = SegDataset(
+    test_dataset = ContrastiveSegDataset(
         pytorch_data_dir=args.data_dir,
         dataset_name=args.dataset,
+        crop_type=None,
         image_set="val",
         transform=get_transform(args.test_resolution, False, "center"),
         target_transform=get_transform(args.test_resolution, True, "center"),
+        mask=True,
     )
 
     if args.distributed: test_sampler = DistributedSampler(test_dataset, shuffle=False)
@@ -56,117 +68,6 @@ def dataloader(args, no_ddp_train_shuffle=True):
     sampler = train_sampler if args.distributed else None
 
     return train_loader, test_loader, sampler
-
-
-class Potsdam(Dataset):
-    def __init__(self, root, image_set, transform, target_transform, coarse_labels):
-        super(Potsdam, self).__init__()
-        self.split = image_set
-        self.root = os.path.join(root, "potsdam")
-        self.transform = transform
-        self.target_transform = target_transform
-        split_files = {
-            "train": ["labelled_train.txt"],
-            "unlabelled_train": ["unlabelled_train.txt"],
-            # "train": ["unlabelled_train.txt"],
-            "val": ["labelled_test.txt"],
-            "train+val": ["labelled_train.txt", "labelled_test.txt"],
-            "all": ["all.txt"]
-        }
-        assert self.split in split_files.keys()
-
-        self.files = []
-        for split_file in split_files[self.split]:
-            with open(join(self.root, split_file), "r") as f:
-                self.files.extend(fn.rstrip() for fn in f.readlines())
-
-        self.coarse_labels = coarse_labels
-        self.fine_to_coarse = {0: 0, 4: 0,  # roads and cars
-                               1: 1, 5: 1,  # buildings and clutter
-                               2: 2, 3: 2,  # vegetation and trees
-                               255: -1
-                               }
-
-    def __getitem__(self, index):
-        image_id = self.files[index]
-        img = loadmat(join(self.root, "imgs", image_id + ".mat"))["img"]
-        img = to_pil_image(torch.from_numpy(img).permute(2, 0, 1)[:3])  # TODO add ir channel back
-        try:
-            label = loadmat(join(self.root, "gt", image_id + ".mat"))["gt"]
-            label = to_pil_image(torch.from_numpy(label).unsqueeze(-1).permute(2, 0, 1))
-        except FileNotFoundError:
-            label = to_pil_image(torch.ones(1, img.height, img.width))
-
-        seed = np.random.randint(2147483647)
-        random.seed(seed)
-        torch.manual_seed(seed)
-        img = self.transform(img)
-
-        random.seed(seed)
-        torch.manual_seed(seed)
-        label = self.target_transform(label).squeeze(0)
-        if self.coarse_labels:
-            new_label_map = torch.zeros_like(label)
-            for fine, coarse in self.fine_to_coarse.items():
-                new_label_map[label == fine] = coarse
-            label = new_label_map
-
-        mask = (label > 0).to(torch.float32)
-        return img, label, mask
-
-    def __len__(self):
-        return len(self.files)
-
-
-class PotsdamRaw(Dataset):
-    def __init__(self, root, image_set, transform, target_transform, coarse_labels):
-        super(PotsdamRaw, self).__init__()
-        self.split = image_set
-        self.root = os.path.join(root, "potsdamraw", "processed")
-        self.transform = transform
-        self.target_transform = target_transform
-        self.files = []
-        for im_num in range(38):
-            for i_h in range(15):
-                for i_w in range(15):
-                    self.files.append("{}_{}_{}.mat".format(im_num, i_h, i_w))
-
-        self.coarse_labels = coarse_labels
-        self.fine_to_coarse = {0: 0, 4: 0,  # roads and cars
-                               1: 1, 5: 1,  # buildings and clutter
-                               2: 2, 3: 2,  # vegetation and trees
-                               255: -1
-                               }
-
-    def __getitem__(self, index):
-        image_id = self.files[index]
-        img = loadmat(join(self.root, "imgs", image_id))["img"]
-        img = to_pil_image(torch.from_numpy(img).permute(2, 0, 1)[:3])  # TODO add ir channel back
-        try:
-            label = loadmat(join(self.root, "gt", image_id))["gt"]
-            label = to_pil_image(torch.from_numpy(label).unsqueeze(-1).permute(2, 0, 1))
-        except FileNotFoundError:
-            label = to_pil_image(torch.ones(1, img.height, img.width))
-
-        seed = np.random.randint(2147483647)
-        random.seed(seed)
-        torch.manual_seed(seed)
-        img = self.transform(img)
-
-        random.seed(seed)
-        torch.manual_seed(seed)
-        label = self.target_transform(label).squeeze(0)
-        if self.coarse_labels:
-            new_label_map = torch.zeros_like(label)
-            for fine, coarse in self.fine_to_coarse.items():
-                new_label_map[label == fine] = coarse
-            label = new_label_map
-
-        mask = (label > 0).to(torch.float32)
-        return img, label, mask
-
-    def __len__(self):
-        return len(self.files)
 
 
 class Coco(Dataset):
@@ -261,6 +162,7 @@ class Coco(Dataset):
     def __len__(self):
         return len(self.image_files)
 
+
 class CityscapesSeg(Dataset):
     def __init__(self, root, image_set, transform, target_transform):
         super(CityscapesSeg, self).__init__()
@@ -306,6 +208,38 @@ class CityscapesSeg(Dataset):
         return len(self.inner_loader)
 
 
+class CroppedDataset(Dataset):
+    def __init__(self, root, dataset_name, crop_type, crop_ratio, image_set, transform, target_transform):
+        super(CroppedDataset, self).__init__()
+        self.dataset_name = dataset_name
+        self.split = image_set
+        self.root = join(root, dataset_name, "cropped", "{}_{}_crop_{}".format(dataset_name, crop_type, crop_ratio))
+        self.transform = transform
+        self.target_transform = target_transform
+        self.img_dir = join(self.root, "img", self.split)
+        self.label_dir = join(self.root, "label", self.split)
+        self.num_images = len(os.listdir(self.img_dir))
+        assert self.num_images == len(os.listdir(self.label_dir))
+
+    def __getitem__(self, index):
+        image = Image.open(join(self.img_dir, "{}.jpg".format(index))).convert('RGB')
+        target = Image.open(join(self.label_dir, "{}.png".format(index))) if index!=23385 else 0
+
+        seed = np.random.randint(2147483647)
+        random.seed(seed)
+        torch.manual_seed(seed)
+        image = self.transform(image)
+        random.seed(seed)
+        torch.manual_seed(seed)
+        target = self.target_transform(target) if index!=23385 else torch.zeros([1, image.shape[1], image.shape[2]], dtype=torch.int64)
+
+        target = target - 1
+        mask = target == -1
+        return image, target.squeeze(0), mask
+
+    def __len__(self):
+        return self.num_images
+
 class PascalVOC(VOCSegmentation):
     def __init__(self, root, year, image_set, download, transforms, target_transforms):
         super().__init__(root, year=year, image_set=image_set, download=download, transforms=transforms)
@@ -334,32 +268,40 @@ class PascalVOC(VOCSegmentation):
                     transforms=transform,
                     target_transforms=target_transform)
 
-class SegDataset(Dataset):
+class ContrastiveSegDataset(Dataset):
     def __init__(self,
                  pytorch_data_dir,
                  dataset_name,
+                 crop_type,
                  image_set,
                  transform,
                  target_transform,
+                 aug_geometric_transform=None,
+                 aug_photometric_transform=None,
+                 num_neighbors=5,
+                 mask=False,
+                 pos_labels=False,
+                 pos_images=False,
+                 extra_transform=None,
                  ):
-        super(SegDataset).__init__()
+        super(ContrastiveSegDataset).__init__()
+        self.num_neighbors = num_neighbors
         self.image_set = image_set
         self.dataset_name = dataset_name
-
+        self.mask = mask
+        self.pos_labels = pos_labels
+        self.pos_images = pos_images
+        self.extra_transform = extra_transform
         self.normalize = transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
 
-        if dataset_name == "potsdam":
-            self.n_classes = 3
-            dataset_class = Potsdam
-            extra_args = dict(coarse_labels=True)
-        elif dataset_name == "potsdamraw":
-            self.n_classes = 3
-            dataset_class = PotsdamRaw
-            extra_args = dict(coarse_labels=True)
-        elif dataset_name == "cityscapes":
+        if  dataset_name == "cityscapes" and crop_type is None:
             self.n_classes = 27
             dataset_class = CityscapesSeg
             extra_args = dict()
+        elif dataset_name == "cityscapes" and crop_type is not None:
+            self.n_classes = 27
+            dataset_class = CroppedDataset
+            extra_args = dict(dataset_name="cityscapes", crop_type=crop_type, crop_ratio=0.5)
         elif dataset_name == "cocostuff3":
             self.n_classes = 3
             dataset_class = Coco
@@ -368,7 +310,11 @@ class SegDataset(Dataset):
             self.n_classes = 15
             dataset_class = Coco
             extra_args = dict(coarse_labels=False, subset=7, exclude_things=True)
-        elif dataset_name == "cocostuff27":
+        elif dataset_name == "cocostuff27" and crop_type is not None:
+            self.n_classes = 27
+            dataset_class = CroppedDataset
+            extra_args = dict(dataset_name="cocostuff", crop_type="five", crop_ratio=0.5)
+        elif dataset_name == "cocostuff27" and crop_type is None:
             self.n_classes = 27
             dataset_class = Coco
             extra_args = dict(coarse_labels=False, subset=None, exclude_things=False)
@@ -381,6 +327,9 @@ class SegDataset(Dataset):
         else:
             raise ValueError("Unknown dataset: {}".format(dataset_name))
 
+        self.aug_geometric_transform = aug_geometric_transform
+        self.aug_photometric_transform = aug_photometric_transform
+
         self.dataset = dataset_class(
             root=pytorch_data_dir,
             image_set=self.image_set,
@@ -391,14 +340,24 @@ class SegDataset(Dataset):
         return len(self.dataset)
 
     def _set_seed(self, seed):
-        random.seed(seed)  # apply this seed to img transforms
+        random.seed(seed)  # apply this seed to img tranfsorms
         torch.manual_seed(seed)  # needed for torchvision 0.7
 
     def __getitem__(self, ind):
         pack = self.dataset[ind]
 
-        ret = {"ind": ind,
-               "img": self.normalize(pack[0]),
-               "label": pack[1],
-               }
+        seed = np.random.randint(2147483647)  # make a seed with numpy generator
+        self._set_seed(seed)
+        if self.extra_transform is not None:
+            extra_trans = self.extra_transform
+        else:
+            extra_trans = lambda i, x: x
+
+        ret = {
+            "ind": ind,
+            "img": self.normalize(extra_trans(ind, pack[0])),
+            "label": extra_trans(ind, pack[1]),
+        }
+
         return ret
+

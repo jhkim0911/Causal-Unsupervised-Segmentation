@@ -74,7 +74,7 @@ you can download them in the following links:
     .
     ├── loader
     │   ├── netloader.py                # Self-Supervised Pretrained Model Loader & Segmentation Head Loader
-    │   └── stego_dataloader.py         # Dataloader Thanks to STEGO [ICLR 2022]
+    │   └── dataloader.py               # Dataloader Thanks to STEGO [ICLR 2022]
     │
     ├── models                          # Model Design of Self-Supervised Pretrained: [DINO/DINOv2/iBOT/MAE/MSN]
     │   ├── dinomaevit.py               # ViT Structure of DINO and MAE

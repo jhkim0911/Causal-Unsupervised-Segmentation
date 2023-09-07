@@ -7,7 +7,7 @@ from modules.segment_module import transform, untransform, compute_modularity_ba
 import torch.distributed as dist
 import torch.multiprocessing as mp
 import torch.backends.cudnn as cudnn
-from loader.stego_dataloader import stego_dataloader
+from loader.dataloader import dataloader
 from torch.cuda.amp import autocast, GradScaler
 from loader.netloader import network_loader, segment_tr_loader, cluster_loader
 
@@ -166,7 +166,7 @@ def main(rank, args, ngpus_per_node):
     print_argparse(args, rank)
 
     # dataset loader
-    train_loader, test_loader, sampler = stego_dataloader(args)
+    train_loader, test_loader, sampler = dataloader(args)
 
     # network loader
     net = network_loader(args, rank)
@@ -275,7 +275,7 @@ if __name__ == "__main__":
     parser.add_argument('--ckpt', default='checkpoint/dino_vit_base_16.pth', type=str)
     parser.add_argument('--epoch', default=5, type=int)
     parser.add_argument('--distributed', default=True, type=str2bool)
-    parser.add_argument('--load_segment', default=True, type=str2bool)
+    parser.add_argument('--load_segment', default=False, type=str2bool)
     parser.add_argument('--load_cluster', default=False, type=str2bool)
     parser.add_argument('--train_resolution', default=320, type=int)
     parser.add_argument('--test_resolution', default=320, type=int)

@@ -3,7 +3,7 @@ import argparse
 from tqdm import tqdm
 from utils.utils import *
 from modules.segment_module import transform, untransform
-from loader.stego_dataloader import stego_dataloader
+from loader.dataloader import dataloader
 from torch.cuda.amp import autocast
 from loader.netloader import network_loader, segment_tr_loader, cluster_loader
 
@@ -200,7 +200,7 @@ def main(rank, args):
     print_argparse(args, rank=0)
 
     # dataset loader
-    _, test_loader, _ = stego_dataloader(args, False)
+    _, test_loader, _ = dataloader(args, False)
 
     # network loader
     net = network_loader(args, rank)
