@@ -83,22 +83,22 @@ you can download them in the following links:
     │   └── msnvit.py                   # ViT Structure of MSN
     │
     ├── modules                         # Segmentation Head and Its Necessary Function
-    │   └── segment_cnn.py              # [CNN] Including Tools with Generating Concept Book and Contrastive Learning
-    │   └── segment_detr.py             # [DETR] Including Tools with Generating Concept Book and Contrastive Learning
+    │   └── segment_module.py           # [Including Tools with Generating Concept Book and Contrastive Learning
+    │   └── segment.py                  # [MLP & TR] Including Tools with Generating Concept Book and Contrastive Learning
     │
     ├── utils
     │   └── utils.py                    # Utility for auxiliary tools
     │
-    ├── train_modularity.py             # (STEP 1) [CNN & DETR] Generating Concept Cluster Book as a Mediator
+    ├── train_modularity.py             # (STEP 1) [MLP & TR] Generating Concept Cluster Book as a Mediator
     │
-    ├── train_front_door_cnn.py         # (STEP 2) [CNN] Frontdoor Adjustment through Unsupervised Semantic Segmentation
-    ├── fine_tuning_cnn.py              # (STEP 3) [CNN] Fine-Tuning Cluster Probe
+    ├── train_front_door_mlp.py         # (STEP 2) [MLP] Frontdoor Adjustment through Unsupervised Semantic Segmentation
+    ├── fine_tuning_mlp.py              # (STEP 3) [MLP] Fine-Tuning Cluster Probe
     │
-    ├── train_front_door_detr.py        # (STEP 2) [DETR] Frontdoor Adjustment through Unsupervised Semantic Segmentation
-    ├── fine_tuning_detr.py             # (STEP 3) [DETR] Fine-Tuning Cluster Probe
+    ├── train_front_door_tr.py          # (STEP 2) [TR] Frontdoor Adjustment through Unsupervised Semantic Segmentation
+    ├── fine_tuning_tr.py               # (STEP 3) [TR] Fine-Tuning Cluster Probe
     │
-    ├── test_cnn.py                     # [CNN] Evaluating Unsupervised Semantic Segmantation Performance (Post-Processing)
-    ├── test_detr.py                    # [DETR] Evaluating Unsupervised Semantic Segmantation Performance (Post-Processing)
+    ├── test_mlp.py                     # [MLP] Evaluating Unsupervised Semantic Segmantation Performance (Post-Processing)
+    ├── test_tr.py                      # [TR] Evaluating Unsupervised Semantic Segmantation Performance (Post-Processing)
     │
     ├── requirements.txt
     └── README.md
@@ -121,15 +121,15 @@ test_gpu="${train_gpu:0}" # Only singe gpu
 ckpt="checkpoint/dino_vit_base_8.pth" # checkpoint root (/checkpoint) and its filename (name type is really important to run)
 port=$(($RANDOM%100+1200)) # DDP port number
 
-# CNN
-python train_front_door_cnn.py --dataset $dataset --ckpt $ckpt --gpu $train_gpu --port $port && python fine_tuning_cnn.py --dataset $dataset --ckpt $ckpt --gpu $train_gpu --port $port && python test_cnn.py --dataset $dataset --ckpt $ckpt --gpu $test_gpu
+# MLP
+python train_front_door_mlp.py --dataset $dataset --ckpt $ckpt --gpu $train_gpu --port $port && python fine_tuning_mlp.py --dataset $dataset --ckpt $ckpt --gpu $train_gpu --port $port && python test_mlp.py --dataset $dataset --ckpt $ckpt --gpu $test_gpu
 
-# DETR
-python train_front_door_detr.py --dataset $dataset --ckpt $ckpt --gpu $train_gpu --port $port && python fine_tuning_detr.py --dataset $dataset --ckpt $ckpt --gpu $train_gpu --port $port && python test_detr.py --dataset $dataset --ckpt $ckpt --gpu $test_gpu
+# TR
+python train_front_door_tr.py --dataset $dataset --ckpt $ckpt --gpu $train_gpu --port $port && python fine_tuning_tr.py --dataset $dataset --ckpt $ckpt --gpu $train_gpu --port $port && python test_tr.py --dataset $dataset --ckpt $ckpt --gpu $test_gpu
 
 # only test (if you want to only run test for evaluation, then you can uncomment it and run it)
-# python test_cnn.py --dataset $dataset --ckpt $ckpt --gpu $test_gpu
-# python test_detr.py --dataset $dataset --ckpt $ckpt --gpu $test_gpu
+# python test_mlp.py --dataset $dataset --ckpt $ckpt --gpu $test_gpu
+# python test_tr.py --dataset $dataset --ckpt $ckpt --gpu $test_gpu
 ```
 
 
@@ -144,18 +144,18 @@ python train_mediator.py # DINO/DINOv2/iBOT/MAE/MSN
 ### (STEP 2): Frontdoor Adjustment through Contrastive Learning
 
 ```shell script
-python train_front_door_cnn.py # CNN
+python train_front_door_mlp.py # MLP
 # or
-python train_front_door_detr.py # DETR
+python train_front_door_tr.py # TR
 ```
 
 
 ### (STEP 3):  *Technical STEP: Fine-Tuning Cluster Probe*
 
 ```shell script
-python fine_tuning_cnn.py # CNN
+python fine_tuning_mlp.py # MLP
 # or
-python fine_tuning_detr.py # DETR
+python fine_tuning_tr.py # TR
 ```
 
 ---
@@ -163,9 +163,9 @@ python fine_tuning_detr.py # DETR
 ### 2. Testing CUSS
 
 ```shell script
-python test_cnn.py # CNN
+python test_mlp.py # MLP
 # or
-python test_detr.py # DETR
+python test_tr.py # TR
 ```
 
 ---

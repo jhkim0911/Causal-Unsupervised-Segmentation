@@ -3,13 +3,10 @@ from os.path import join
 
 import torch.multiprocessing
 from PIL import Image
-from scipy.io import loadmat
 from torch.utils.data import DataLoader
 from torch.utils.data import Dataset
 from torchvision.datasets.cityscapes import Cityscapes
 from torchvision.datasets import VOCSegmentation
-from torchvision.transforms.functional import to_pil_image
-from tqdm import tqdm
 
 
 from utils.utils import *
@@ -25,6 +22,10 @@ def stego_dataloader(args, no_ddp_train_shuffle=True):
         args.n_classes = 27
     elif args.dataset == "pascalvoc":
         args.n_classes = 21
+    elif args.dataset == "coco80":
+        args.n_classes = 80
+    elif args.dataset == "coco171":
+        args.n_classes = 171
 
     # train dataset
     train_dataset = ContrastiveSegDataset(
@@ -34,7 +35,6 @@ def stego_dataloader(args, no_ddp_train_shuffle=True):
         image_set="train",
         transform=get_transform(args.train_resolution, False, "center"),
         target_transform=get_transform(args.train_resolution, True, "center"),
-        cfg=args,
         num_neighbors=7,
         mask=True,
         pos_images=True,
@@ -56,7 +56,6 @@ def stego_dataloader(args, no_ddp_train_shuffle=True):
         transform=get_transform(args.test_resolution, False, "center"),
         target_transform=get_transform(args.test_resolution, True, "center"),
         mask=True,
-        cfg=args,
     )
 
     if args.distributed: test_sampler = DistributedSampler(test_dataset, shuffle=False)
@@ -69,221 +68,6 @@ def stego_dataloader(args, no_ddp_train_shuffle=True):
     sampler = train_sampler if args.distributed else None
 
     return train_loader, test_loader, sampler
-
-def bit_get(val, idx):
-    """Gets the bit value.
-    Args:
-      val: Input value, int or numpy int array.
-      idx: Which bit of the input val.
-    Returns:
-      The "idx"-th bit of input val.
-    """
-    return (val >> idx) & 1
-
-
-def create_pascal_label_colormap():
-    """Creates a label colormap used in PASCAL VOC segmentation benchmark.
-    Returns:
-      A colormap for visualizing segmentation results.
-    """
-    colormap = np.zeros((512, 3), dtype=int)
-    ind = np.arange(512, dtype=int)
-
-    for shift in reversed(list(range(8))):
-        for channel in range(3):
-            colormap[:, channel] |= bit_get(ind, channel) << shift
-        ind >>= 3
-
-    return colormap
-
-
-def create_cityscapes_colormap():
-    colors = [(128, 64, 128),
-              (244, 35, 232),
-              (250, 170, 160),
-              (230, 150, 140),
-              (70, 70, 70),
-              (102, 102, 156),
-              (190, 153, 153),
-              (180, 165, 180),
-              (150, 100, 100),
-              (150, 120, 90),
-              (153, 153, 153),
-              (153, 153, 153),
-              (250, 170, 30),
-              (220, 220, 0),
-              (107, 142, 35),
-              (152, 251, 152),
-              (70, 130, 180),
-              (220, 20, 60),
-              (255, 0, 0),
-              (0, 0, 142),
-              (0, 0, 70),
-              (0, 60, 100),
-              (0, 0, 90),
-              (0, 0, 110),
-              (0, 80, 100),
-              (0, 0, 230),
-              (119, 11, 32),
-              (0, 0, 0)]
-    return np.array(colors)
-
-
-class DirectoryDataset(Dataset):
-    def __init__(self, root, path, image_set, transform, target_transform):
-        super(DirectoryDataset, self).__init__()
-        self.split = image_set
-        self.dir = join(root, path)
-        self.img_dir = join(self.dir, "imgs", self.split)
-        self.label_dir = join(self.dir, "labels", self.split)
-
-        self.transform = transform
-        self.target_transform = target_transform
-
-        self.img_files = np.array(sorted(os.listdir(self.img_dir)))
-        assert len(self.img_files) > 0
-        if os.path.exists(join(self.dir, "labels")):
-            self.label_files = np.array(sorted(os.listdir(self.label_dir)))
-            assert len(self.img_files) == len(self.label_files)
-        else:
-            self.label_files = None
-
-    def __getitem__(self, index):
-        image_fn = self.img_files[index]
-        img = Image.open(join(self.img_dir, image_fn))
-
-        if self.label_files is not None:
-            label_fn = self.label_files[index]
-            label = Image.open(join(self.label_dir, label_fn))
-
-        seed = np.random.randint(2147483647)
-        random.seed(seed)
-        torch.manual_seed(seed)
-        img = self.transform(img)
-
-        if self.label_files is not None:
-            random.seed(seed)
-            torch.manual_seed(seed)
-            label = self.target_transform(label)
-        else:
-            label = torch.zeros(img.shape[1], img.shape[2], dtype=torch.int64) - 1
-
-        mask = (label > 0).to(torch.float32)
-        return img, label, mask
-
-    def __len__(self):
-        return len(self.img_files)
-
-
-class Potsdam(Dataset):
-    def __init__(self, root, image_set, transform, target_transform, coarse_labels):
-        super(Potsdam, self).__init__()
-        self.split = image_set
-        self.root = os.path.join(root, "potsdam")
-        self.transform = transform
-        self.target_transform = target_transform
-        split_files = {
-            "train": ["labelled_train.txt"],
-            "unlabelled_train": ["unlabelled_train.txt"],
-            # "train": ["unlabelled_train.txt"],
-            "val": ["labelled_test.txt"],
-            "train+val": ["labelled_train.txt", "labelled_test.txt"],
-            "all": ["all.txt"]
-        }
-        assert self.split in split_files.keys()
-
-        self.files = []
-        for split_file in split_files[self.split]:
-            with open(join(self.root, split_file), "r") as f:
-                self.files.extend(fn.rstrip() for fn in f.readlines())
-
-        self.coarse_labels = coarse_labels
-        self.fine_to_coarse = {0: 0, 4: 0,  # roads and cars
-                               1: 1, 5: 1,  # buildings and clutter
-                               2: 2, 3: 2,  # vegetation and trees
-                               255: -1
-                               }
-
-    def __getitem__(self, index):
-        image_id = self.files[index]
-        img = loadmat(join(self.root, "imgs", image_id + ".mat"))["img"]
-        img = to_pil_image(torch.from_numpy(img).permute(2, 0, 1)[:3])  # TODO add ir channel back
-        try:
-            label = loadmat(join(self.root, "gt", image_id + ".mat"))["gt"]
-            label = to_pil_image(torch.from_numpy(label).unsqueeze(-1).permute(2, 0, 1))
-        except FileNotFoundError:
-            label = to_pil_image(torch.ones(1, img.height, img.width))
-
-        seed = np.random.randint(2147483647)
-        random.seed(seed)
-        torch.manual_seed(seed)
-        img = self.transform(img)
-
-        random.seed(seed)
-        torch.manual_seed(seed)
-        label = self.target_transform(label).squeeze(0)
-        if self.coarse_labels:
-            new_label_map = torch.zeros_like(label)
-            for fine, coarse in self.fine_to_coarse.items():
-                new_label_map[label == fine] = coarse
-            label = new_label_map
-
-        mask = (label > 0).to(torch.float32)
-        return img, label, mask
-
-    def __len__(self):
-        return len(self.files)
-
-
-class PotsdamRaw(Dataset):
-    def __init__(self, root, image_set, transform, target_transform, coarse_labels):
-        super(PotsdamRaw, self).__init__()
-        self.split = image_set
-        self.root = os.path.join(root, "potsdamraw", "processed")
-        self.transform = transform
-        self.target_transform = target_transform
-        self.files = []
-        for im_num in range(38):
-            for i_h in range(15):
-                for i_w in range(15):
-                    self.files.append("{}_{}_{}.mat".format(im_num, i_h, i_w))
-
-        self.coarse_labels = coarse_labels
-        self.fine_to_coarse = {0: 0, 4: 0,  # roads and cars
-                               1: 1, 5: 1,  # buildings and clutter
-                               2: 2, 3: 2,  # vegetation and trees
-                               255: -1
-                               }
-
-    def __getitem__(self, index):
-        image_id = self.files[index]
-        img = loadmat(join(self.root, "imgs", image_id))["img"]
-        img = to_pil_image(torch.from_numpy(img).permute(2, 0, 1)[:3])  # TODO add ir channel back
-        try:
-            label = loadmat(join(self.root, "gt", image_id))["gt"]
-            label = to_pil_image(torch.from_numpy(label).unsqueeze(-1).permute(2, 0, 1))
-        except FileNotFoundError:
-            label = to_pil_image(torch.ones(1, img.height, img.width))
-
-        seed = np.random.randint(2147483647)
-        random.seed(seed)
-        torch.manual_seed(seed)
-        img = self.transform(img)
-
-        random.seed(seed)
-        torch.manual_seed(seed)
-        label = self.target_transform(label).squeeze(0)
-        if self.coarse_labels:
-            new_label_map = torch.zeros_like(label)
-            for fine, coarse in self.fine_to_coarse.items():
-                new_label_map[label == fine] = coarse
-            label = new_label_map
-
-        mask = (label > 0).to(torch.float32)
-        return img, label, mask
-
-    def __len__(self):
-        return len(self.files)
 
 
 class Coco(Dataset):
@@ -456,22 +240,6 @@ class CroppedDataset(Dataset):
     def __len__(self):
         return self.num_images
 
-
-class MaterializedDataset(Dataset):
-
-    def __init__(self, ds):
-        self.ds = ds
-        self.materialized = []
-        loader = DataLoader(ds, num_workers=12, collate_fn=lambda l: l[0])
-        for batch in tqdm(loader):
-            self.materialized.append(batch)
-
-    def __len__(self):
-        return len(self.ds)
-
-    def __getitem__(self, ind):
-        return self.materialized[ind]
-
 class PascalVOC(VOCSegmentation):
     def __init__(self, root, year, image_set, download, transforms, target_transforms):
         super().__init__(root, year=year, image_set=image_set, download=download, transforms=transforms)
@@ -508,7 +276,6 @@ class ContrastiveSegDataset(Dataset):
                  image_set,
                  transform,
                  target_transform,
-                 cfg,
                  aug_geometric_transform=None,
                  aug_photometric_transform=None,
                  num_neighbors=5,
@@ -525,23 +292,9 @@ class ContrastiveSegDataset(Dataset):
         self.pos_labels = pos_labels
         self.pos_images = pos_images
         self.extra_transform = extra_transform
-
         self.normalize = transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
 
-
-        if dataset_name == "potsdam":
-            self.n_classes = 3
-            dataset_class = Potsdam
-            extra_args = dict(coarse_labels=True)
-        elif dataset_name == "potsdamraw":
-            self.n_classes = 3
-            dataset_class = PotsdamRaw
-            extra_args = dict(coarse_labels=True)
-        elif dataset_name == "directory":
-            self.n_classes = cfg.dir_dataset_n_classes
-            dataset_class = DirectoryDataset
-            extra_args = dict(path=cfg.dir_dataset_name)
-        elif dataset_name == "cityscapes" and crop_type is None:
+        if  dataset_name == "cityscapes" and crop_type is None:
             self.n_classes = 27
             dataset_class = CityscapesSeg
             extra_args = dict()

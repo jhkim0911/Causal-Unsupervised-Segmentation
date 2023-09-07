@@ -10,8 +10,8 @@ train_gpu="4,5,6,7"
 # DINO
 # ckpt="checkpoint/dino_vit_small_8.pth"
 # ckpt="checkpoint/dino_vit_small_16.pth"
-# ckpt="checkpoint/dino_vit_base_8.pth"
-ckpt="checkpoint/dino_vit_base_16.pth"
+ckpt="checkpoint/dino_vit_base_8.pth"
+# ckpt="checkpoint/dino_vit_base_16.pth"
 
 # DINOv2
 # ckpt="checkpoint/dinov2_vit_small_14.pth"
@@ -31,19 +31,17 @@ ckpt="checkpoint/dino_vit_base_16.pth"
 test_gpu="${train_gpu:0}"
 port=$(($RANDOM%1000+1000))
 
-
 # Mediator
 # python train_mediator.py --dataset $dataset --ckpt $ckpt --gpu $train_gpu --port $port
 
+# MLP
+# python train_front_door_mlp.py --dataset $dataset --ckpt $ckpt --gpu $train_gpu --port $port && python fine_tuning_mlp.py --dataset $dataset --epoch 1 --ckpt $ckpt --gpu $train_gpu --port $port && python test_mlp.py --dataset $dataset --ckpt $ckpt --gpu $test_gpu
+# python fine_tuning_mlp.py --dataset $dataset --epoch 1 --ckpt $ckpt --gpu $train_gpu --port $port && python test_mlp.py --dataset $dataset --ckpt $ckpt --gpu $test_gpu
 
-# CNN
-# python train_front_door_cnn.py --dataset $dataset --ckpt $ckpt --gpu $train_gpu --port $port && python fine_tuning_cnn.py --dataset $dataset --epoch 1 --ckpt $ckpt --gpu $train_gpu --port $port && python test_cnn.py --dataset $dataset --ckpt $ckpt --gpu $test_gpu
-# python fine_tuning_cnn.py --dataset $dataset --epoch 1 --ckpt $ckpt --gpu $train_gpu --port $port && python test_cnn.py --dataset $dataset --ckpt $ckpt --gpu $test_gpu
-
-# DETR
-# python train_front_door_detr.py --dataset $dataset --ckpt $ckpt --gpu $train_gpu --port $port && python fine_tuning_detr.py --epoch 5 --dataset $dataset --ckpt $ckpt --gpu $train_gpu --port $port && python test_detr.py --dataset $dataset --ckpt $ckpt --gpu $test_gpu
-python fine_tuning_detr.py --epoch 5 --dataset $dataset --ckpt $ckpt --gpu $train_gpu --port $port && python test_detr.py --dataset $dataset --ckpt $ckpt --gpu $test_gpu
+# TR
+# python train_front_door_tr.py --dataset $dataset --ckpt $ckpt --gpu $train_gpu --port $port && python fine_tuning_tr.py --epoch 5 --dataset $dataset --ckpt $ckpt --gpu $train_gpu --port $port && python test_tr.py --dataset $dataset --ckpt $ckpt --gpu $test_gpu
+python fine_tuning_tr.py --epoch 5 --dataset $dataset --ckpt $ckpt --gpu $train_gpu --port $port && python test_tr.py --dataset $dataset --ckpt $ckpt --gpu $test_gpu
 
 # only test
-# python test_cnn.py --dataset $dataset --ckpt $ckpt --gpu $test_gpu
-# python test_detr.py --dataset $dataset --ckpt $ckpt --gpu $test_gpu
+# python test_mlp.py --dataset $dataset --ckpt $ckpt --gpu $test_gpu
+# python test_tr.py --dataset $dataset --ckpt $ckpt --gpu $test_gpu

@@ -75,14 +75,14 @@ def check_dir(dir_path):
     if not os.path.exists(dir_path):
         os.makedirs(dir_path)
 
-def save_all(args, ind, img, label, cluster_preds, crf_preds, hungarian_preds, cmap, is_detr=False):
+def save_all(args, ind, img, label, cluster_preds, crf_preds, hungarian_preds, cmap, is_tr=False):
     baseline = args.ckpt.split('/')[-1].split('.')[0]
     y = f'{args.num_codebook}'
     check_dir(f'results')
-    if is_detr:
-        root = os.path.join('results', args.dataset, 'DETR', baseline, y)
+    if is_tr:
+        root = os.path.join('results', args.dataset, 'TR', baseline, y)
     else:
-        root = os.path.join('results', args.dataset, 'CNN', baseline, y)
+        root = os.path.join('results', args.dataset, 'MLP', baseline, y)
 
     check_dir(f'{root}/imgs')
     check_dir(f'{root}/labels')
@@ -104,6 +104,11 @@ def save_all(args, ind, img, label, cluster_preds, crf_preds, hungarian_preds, c
 def rprint(msg, rank=0):
     if rank==0: print(msg)
 
+def num_param(f):
+    out = 0
+    for param in f.head.parameters():
+        out += param.numel()
+    return out
 
 def imshow(img):
     a = 255 * invTrans(img).permute(1, 2, 0).cpu().numpy()

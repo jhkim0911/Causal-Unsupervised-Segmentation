@@ -5,9 +5,10 @@ from utils.utils import *
 import torch.distributed as dist
 import torch.multiprocessing as mp
 import torch.backends.cudnn as cudnn
+from modules.segment_module import transform, untransform, quantize_index, compute_modularity_based_codebook
 from loader.stego_dataloader import stego_dataloader
 from torch.cuda.amp import autocast, GradScaler
-from loader.netloader import network_loader, segment_cnn_loader
+from loader.netloader import network_loader, cluster_loader
 
 cudnn.benchmark = True
 scaler = GradScaler()
@@ -23,12 +24,7 @@ def ddp_clean():
     dist.destroy_process_group()
 
 @Wrapper.EpochPrint
-def train(args, net, segment, train_loader, optimizer):
-    segment.eval()
-
-    # patch size
-    patch_size = int(args.ckpt.split('/')[-1].split('.')[0].split('_')[-1])
-
+def train(args, net, cluster, train_loader, optimizer):
     prog_bar = tqdm(enumerate(train_loader), total=len(train_loader), leave=True)
     for idx, batch in prog_bar:
         # image and label and self supervised feature
@@ -39,7 +35,7 @@ def train(args, net, segment, train_loader, optimizer):
             feat = net(img)[:, 1:, :]
 
             # computing modularity based codebook
-            loss_mod = segment.compute_modularity_based_codebook(segment.codebook, feat, grid=args.grid)
+            loss_mod = compute_modularity_based_codebook(cluster.codebook, feat, grid=args.grid)
 
         # optimization
         optimizer.zero_grad()
@@ -55,9 +51,7 @@ def train(args, net, segment, train_loader, optimizer):
         if args.distributed: dist.barrier()
 
 @Wrapper.TestPrint
-def test(args, net, segment, nice, test_loader):
-    segment.eval()
-
+def test(args, net, cluster, nice, test_loader):
     prog_bar = tqdm(enumerate(test_loader), total=len(test_loader), leave=True)
     for idx, batch in prog_bar:
         # image and label and self supervised feature
@@ -69,10 +63,10 @@ def test(args, net, segment, nice, test_loader):
             feat = net(img)[:, 1:, :]
 
             # interp feat
-            interp_dec_feat = F.interpolate(segment.transform(feat), label.shape[-2:], mode='bilinear', align_corners=False)
+            interp_dec_feat = F.interpolate(transform(feat), label.shape[-2:], mode='bilinear', align_corners=False)
 
             # cluster preds
-            cluster_preds = segment.quantize_index(segment.untransform(interp_dec_feat), segment.codebook)
+            cluster_preds = quantize_index(untransform(interp_dec_feat), cluster.codebook)
 
         # nice evaluation
         _, desc_nice = nice.eval(cluster_preds, label)
@@ -108,10 +102,13 @@ def main(rank, args, ngpus_per_node):
 
     # network loader
     net = network_loader(args, rank)
-    segment = segment_cnn_loader(args, rank)
+    cluster = cluster_loader(args, rank)
+
+    # distributed parsing
+    if args.distributed: net = net.module; cluster = cluster.module
 
     # optimizer and scheduler
-    optimizer = torch.optim.AdamW(segment.parameters(), lr=1e-4)
+    optimizer = torch.optim.AdamW(cluster.parameters(), lr=1e-3 * ngpus_per_node)
     scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.2)
 
     # evaluation
@@ -135,8 +132,8 @@ def main(rank, args, ngpus_per_node):
                 epoch,  # for decorator
                 rank,  # for decorator
                 args,
-                net.module if args.distributed else net,
-                segment.module if args.distributed else segment,
+                net,
+                cluster,
                 train_loader,
                 optimizer)
 
@@ -144,8 +141,8 @@ def main(rank, args, ngpus_per_node):
                 epoch, # for decorator
                 rank, # for decorator
                 args,
-                net.module if args.distributed else net,
-                segment.module if args.distributed else segment,
+                net,
+                cluster,
                 nice,
                 test_loader)
 
@@ -154,8 +151,8 @@ def main(rank, args, ngpus_per_node):
 
             # save
             if rank == 0:
-                np.save(path, segment.module.codebook.detach().cpu().numpy()
-                if args.distributed else segment.codebook.detach().cpu().numpy())
+                np.save(path, cluster.codebook.detach().cpu().numpy()
+                if args.distributed else cluster.codebook.detach().cpu().numpy())
 
             # Interrupt for sync GPU Process
             if args.distributed: dist.barrier()
@@ -177,8 +174,8 @@ if __name__ == "__main__":
     # fixed parameter
     parser.add_argument('--epoch', default=1, type=int)
     parser.add_argument('--distributed', default=True, type=str2bool)
-    parser.add_argument('--load_Best', default=False, type=str2bool)
-    parser.add_argument('--load_Fine', default=False, type=str2bool)
+    parser.add_argument('--load_segment', default=False, type=str2bool)
+    parser.add_argument('--load_cluster', default=False, type=str2bool)
     parser.add_argument('--train_resolution', default=320, type=int)
     parser.add_argument('--test_resolution', default=320, type=int)
     parser.add_argument('--batch_size', default=16, type=int)
@@ -202,14 +199,13 @@ if __name__ == "__main__":
     if 'dinov2' in args.ckpt:
         args.train_resolution=322
         args.test_resolution=322
-
     if 'small' in args.ckpt:
         args.dim=384
-        args.reduced_dim=70
+        args.reduced_dim=90
         args.projection_dim=2048
     elif 'base' in args.ckpt:
         args.dim=768
-        args.reduced_dim=70
+        args.reduced_dim=90
         args.projection_dim=2048
 
     # the number of gpus for multi-process

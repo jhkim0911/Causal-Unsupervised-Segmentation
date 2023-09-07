@@ -9,9 +9,10 @@ from utils.utils import *
 import torch.distributed as dist
 import torch.multiprocessing as mp
 import torch.backends.cudnn as cudnn
+from modules.segment_module import transform, stochastic_sampling, ema_init, ema_update
 from loader.stego_dataloader import stego_dataloader
 from torch.cuda.amp import autocast, GradScaler
-from loader.netloader import network_loader, segment_cnn_loader
+from loader.netloader import network_loader, segment_mlp_loader, cluster_loader
 from tensorboardX import SummaryWriter
 
 cudnn.benchmark = True
@@ -35,10 +36,9 @@ def ddp_clean():
 
 
 @Wrapper.EpochPrint
-def train(args, net, segment, train_loader, optimizer, writer, rank):
+def train(args, net, segment, cluster, train_loader, optimizer_segment, writer, rank):
     global counter
     segment.train()
-    segment.bank_init()
 
     total_acc = 0
     total_loss = 0
@@ -59,7 +59,7 @@ def train(args, net, segment, train_loader, optimizer, writer, rank):
             feat = net(img)[:, 1:, :]
             orig_seg_feat_ema = segment.head_ema(feat, drop=segment.dropout)
 
-            if args.grid: feat, _ = segment.stochastic_sampling(feat)
+            if args.grid: feat, _ = stochastic_sampling(feat)
 
             ######################################################################
             # teacher
@@ -75,8 +75,8 @@ def train(args, net, segment, train_loader, optimizer, writer, rank):
 
             ######################################################################
             # bank compute and contrastive loss
-            segment.bank_compute()
-            loss_front =  segment.contrastive_ema_with_codebook_bank(feat, proj_feat, proj_feat_ema)
+            cluster.bank_compute()
+            loss_front =  cluster.contrastive_ema_with_codebook_bank(feat, proj_feat, proj_feat_ema)
             ######################################################################
 
             # linear probe loss
@@ -87,24 +87,21 @@ def train(args, net, segment, train_loader, optimizer, writer, rank):
             flat_label_mask = (flat_label >= 0) & (flat_label < args.n_classes)
             loss_linear = F.cross_entropy(flat_linear_logits[flat_label_mask], flat_label[flat_label_mask])
 
-            # cluster loss
-            loss_cluster, _ = segment.forward_centroid(orig_seg_feat_ema)
-
             # loss
-            loss = loss_front + loss_linear + loss_cluster
+            loss = loss_front + loss_linear
 
         # optimizer
-        optimizer.zero_grad()
+        optimizer_segment.zero_grad()
         scaler.scale(loss).backward()
-        scaler.step(optimizer)
+        scaler.step(optimizer_segment)
         scaler.update()
 
         # ema update
-        segment.ema_update(segment.head, segment.head_ema)
-        segment.ema_update(segment.projection_head, segment.projection_head_ema)
+        ema_update(segment.head, segment.head_ema)
+        ema_update(segment.projection_head, segment.projection_head_ema)
 
         # bank update
-        segment.bank_update(feat, proj_feat_ema)
+        cluster.bank_update(feat, proj_feat_ema)
 
         # linear probe acc check
         pred_label = linear_logits.argmax(dim=1)
@@ -128,7 +125,6 @@ def train(args, net, segment, train_loader, optimizer, writer, rank):
         if (args.distributed == True) and (rank == 0):
             writer.add_scalar('Train/Contrastive', loss_front, counter)
             writer.add_scalar('Train/Linear', loss_linear, counter)
-            writer.add_scalar('Train/Cluster', loss_cluster, counter)
             writer.add_scalar('Train/Acc', total_acc / (idx + 1), counter)
             counter += 1
 
@@ -137,7 +133,7 @@ def train(args, net, segment, train_loader, optimizer, writer, rank):
 
 
 @Wrapper.TestPrint
-def test(args, net, segment, nice, test_loader, writer, rank):
+def test(args, net, segment, nice, test_loader):
     global counter_test
     segment.eval()
 
@@ -159,12 +155,6 @@ def test(args, net, segment, nice, test_loader, writer, rank):
             flat_label = label.view(-1)
             flat_label_mask = (flat_label >= 0) & (flat_label < args.n_classes)
 
-            # interp feat
-            interp_seg_feat = F.interpolate(segment.transform(seg_feat_ema), label.shape[-2:], mode='bilinear', align_corners=False)
-
-            # cluster
-            cluster_preds = segment.forward_centroid(segment.untransform(interp_seg_feat), inference=True)
-
         # linear probe acc check
         pred_label = linear_logits.argmax(dim=1)
         flat_pred_label = pred_label.view(-1)
@@ -172,20 +162,8 @@ def test(args, net, segment, nice, test_loader, writer, rank):
             flat_label_mask].numel()
         total_acc += acc.item()
 
-        # nice evaluation
-        metric, desc_nice = nice.eval(cluster_preds, label)
-
-
-        # tensorboard
-        if (args.distributed == True) and (rank == 0):
-            writer.add_scalar('Test/mIoU', metric["mIoU"], counter_test)
-            writer.add_scalar('Test/mAP', metric["mAP"], counter_test)
-            writer.add_scalar('Test/Acc', metric["Acc"], counter_test)
-            writer.add_scalar('Test/Linear', 100. * total_acc / (idx + 1), counter_test)
-            counter_test += 1
-
         # real-time print
-        desc = f'[TEST] Acc (Linear): {100. * total_acc / (idx + 1):.1f}% | {desc_nice}'
+        desc = f'[TEST] Acc (Linear): {100. * total_acc / (idx + 1):.1f}%'
         prog_bar.set_description(desc, refresh=True)
 
     # evaluation metric reset
@@ -219,17 +197,16 @@ def main(rank, args, ngpus_per_node):
 
     # network loader
     net = network_loader(args, rank)
-    segment = segment_cnn_loader(args, rank)
+    segment = segment_mlp_loader(args, rank)
+    cluster = cluster_loader(args, rank)
+
+    # distributed parsing
+    if args.distributed: net = net.module; segment = segment.module; cluster = cluster.module
 
     # Bank and EMA initialization
-    if args.distributed:
-        segment.module.bank_init()
-        segment.module.ema_init(segment.module.head, segment.module.head_ema)
-        segment.module.ema_init(segment.module.projection_head, segment.module.projection_head_ema)
-    else:
-        segment.bank_init()
-        segment.ema_init(segment.head, segment.head_ema)
-        segment.ema_init(segment.projection_head, segment.projection_head_ema)
+    cluster.bank_init()
+    ema_init(segment.head, segment.head_ema)
+    ema_init(segment.projection_head, segment.projection_head_ema)
 
     ###################################################################################
     # First, run train_mediator.py
@@ -239,12 +216,8 @@ def main(rank, args, ngpus_per_node):
     if is_exist:
         # load
         codebook = np.load(path)
-        if args.distributed:
-            segment.module.codebook.data = torch.from_numpy(codebook).cuda()
-            segment.module.codebook.requires_grad = False
-        else:
-            segment.codebook.data = torch.from_numpy(codebook).cuda()
-            segment.codebook.requires_grad = False
+        cluster.codebook.data = torch.from_numpy(codebook).cuda()
+        cluster.codebook.requires_grad = False
 
         # print successful loading modularity
         rprint(f'Modularity {path} loaded', rank)
@@ -257,9 +230,8 @@ def main(rank, args, ngpus_per_node):
         return
     ###################################################################################
 
-
     # optimizer
-    optimizer = torch.optim.Adam(segment.parameters(), lr=1e-4 * ngpus_per_node)
+    optimizer_segment = torch.optim.AdamW(segment.parameters(), lr=1e-4 * ngpus_per_node)
 
     # tensorboard
     if (args.distributed == True) and (rank == 0):
@@ -290,10 +262,11 @@ def main(rank, args, ngpus_per_node):
             epoch,  # for decorator
             rank,  # for decorator
             args,
-            net.module if args.distributed else net,
-            segment.module if args.distributed else segment,
+            net,
+            segment,
+            cluster,
             train_loader,
-            optimizer,
+            optimizer_segment,
             writer, rank)
 
 
@@ -301,24 +274,22 @@ def main(rank, args, ngpus_per_node):
             epoch, # for decorator
             rank, # for decorator
             args,
-            net.module if args.distributed else net,
-            segment.module if args.distributed else segment,
+            net,
+            segment,
             nice,
-            test_loader,
-            writer,
-            rank)
+            test_loader)
 
         if (rank == 0):
-            x = segment.module.state_dict() if args.distributed else segment.state_dict()
+            x = segment.state_dict()
             baseline = args.ckpt.split('/')[-1].split('.')[0]
 
             # filepath hierarchy
             check_dir(f'CUSS/{args.dataset}/{baseline}/{args.num_codebook}')
 
             # save path
-            y = f'CUSS/{args.dataset}/{baseline}/{args.num_codebook}/best_cnn.pth'
+            y = f'CUSS/{args.dataset}/{baseline}/{args.num_codebook}/segment_mlp.pth'
             torch.save(x, y)
-            print(f'-----------------TEST Epoch {epoch}: BEST SAVING CHECKPOINT IN {y}-----------------')
+            print(f'-----------------TEST Epoch {epoch}: SAVING CHECKPOINT IN {y}-----------------')
 
         # Interrupt for sync GPU Process
         if args.distributed: dist.barrier()
@@ -337,8 +308,8 @@ if __name__ == "__main__":
     parser.add_argument('--ckpt', default='checkpoint/dino_vit_base_16.pth', type=str)
     parser.add_argument('--epoch', default=1, type=int)
     parser.add_argument('--distributed', default=True, type=str2bool)
-    parser.add_argument('--load_Best', default=False, type=str2bool)
-    parser.add_argument('--load_Fine', default=False, type=str2bool)
+    parser.add_argument('--load_segment', default=False, type=str2bool)
+    parser.add_argument('--load_cluster', default=False, type=str2bool)
     parser.add_argument('--train_resolution', default=224, type=int)
     parser.add_argument('--test_resolution', default=320, type=int)
     parser.add_argument('--batch_size', default=16, type=int)

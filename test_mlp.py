@@ -4,10 +4,11 @@ from tqdm import tqdm
 from utils.utils import *
 from loader.stego_dataloader import stego_dataloader
 from torch.cuda.amp import autocast
-from loader.netloader import network_loader, segment_cnn_loader
+from modules.segment_module import transform, untransform
+from loader.netloader import network_loader, segment_mlp_loader, cluster_loader
 
 
-def test(args, net, segment, nice, test_loader, cmap):
+def test(args, net, segment, cluster, nice, test_loader, cmap):
     segment.eval()
 
     prog_bar = tqdm(enumerate(test_loader), total=len(test_loader), leave=True)
@@ -22,15 +23,15 @@ def test(args, net, segment, nice, test_loader, cmap):
                 # intermediate feature
                 feat = net(img)[:, 1:, :]
                 feat_flip = net(img.flip(dims=[3]))[:, 1:, :]
-            seg_feat = segment.transform(segment.head_ema(feat))
-            seg_feat_flip = segment.transform(segment.head_ema(feat_flip))
-            seg_feat = segment.untransform((seg_feat + seg_feat_flip.flip(dims=[3])) / 2)
+            seg_feat = transform(segment.head_ema(feat))
+            seg_feat_flip = transform(segment.head_ema(feat_flip))
+            seg_feat = untransform((seg_feat + seg_feat_flip.flip(dims=[3])) / 2)
 
             # interp feat
-            interp_seg_feat = F.interpolate(segment.transform(seg_feat), label.shape[-2:], mode='bilinear', align_corners=False)
+            interp_seg_feat = F.interpolate(transform(seg_feat), label.shape[-2:], mode='bilinear', align_corners=False)
 
             # cluster preds
-            cluster_preds = segment.forward_centroid(segment.untransform(interp_seg_feat), crf=True)
+            cluster_preds = cluster.forward_centroid(untransform(interp_seg_feat), crf=True)
 
             # crf
             crf_preds = do_crf(pool, img, cluster_preds).argmax(1).cuda()
@@ -52,8 +53,7 @@ def test(args, net, segment, nice, test_loader, cmap):
     nice.reset()
 
 
-
-def test_without_crf(args, net, segment, nice, test_loader):
+def test_without_crf(args, net, segment, cluster, nice, test_loader):
     segment.eval()
 
     total_acc = 0
@@ -77,10 +77,10 @@ def test_without_crf(args, net, segment, nice, test_loader):
             flat_label_mask = (flat_label >= 0) & (flat_label < args.n_classes)
 
             # interp feat
-            interp_seg_feat = F.interpolate(segment.transform(seg_feat_ema), label.shape[-2:], mode='bilinear', align_corners=False)
+            interp_seg_feat = F.interpolate(transform(seg_feat_ema), label.shape[-2:], mode='bilinear', align_corners=False)
 
             # cluster
-            cluster_preds = segment.forward_centroid(segment.untransform(interp_seg_feat), inference=True)
+            cluster_preds = cluster.forward_centroid(untransform(interp_seg_feat), inference=True)
 
             # nice evaluation
             _, desc_nice = nice.eval(cluster_preds, label)
@@ -196,7 +196,8 @@ def main(rank, args):
 
     # network loader
     net = network_loader(args, rank)
-    segment = segment_cnn_loader(args, rank)
+    segment = segment_mlp_loader(args, rank)
+    cluster = cluster_loader(args, rank)
 
     # evaluation
     nice = NiceTool(args.n_classes)
@@ -211,16 +212,18 @@ def main(rank, args):
     # post-processing with crf and hungarian matching
     test_without_crf(
         args,
-        net.module if args.distributed else net,
-        segment.module if args.distributed else segment,
+        net,
+        segment,
+        cluster,
         nice,
         test_loader)
 
     # post-processing with crf and hungarian matching
     test(
         args,
-        net.module if args.distributed else net,
-        segment.module if args.distributed else segment,
+        net,
+        segment,
+        cluster,
         nice,
         test_loader,
         cmap)
@@ -228,15 +231,15 @@ def main(rank, args):
     # post-processing with crf and hungarian matching
     test_linear_without_crf(
         args,
-        net.module if args.distributed else net,
-        segment.module if args.distributed else segment,
+        net,
+        segment,
         nice,
         test_loader)
     
     # test_linear(
     #     args,
-    #     net.module if args.distributed else net,
-    #     segment.module if args.distributed else segment,
+    #     net,
+    #     segment,
     #     nice,
     #     test_loader)
 
@@ -249,8 +252,8 @@ if __name__ == "__main__":
     parser.add_argument('--data_dir', default='/mnt/hard2/lbk-iccv/datasets', type=str)
     parser.add_argument('--dataset', default='cityscapes', type=str)
     parser.add_argument('--port', default='12355', type=str)
-    parser.add_argument('--load_Best', default=False, type=str2bool)
-    parser.add_argument('--load_Fine', default=True, type=str2bool)
+    parser.add_argument('--load_segment', default=True, type=str2bool)
+    parser.add_argument('--load_cluster', default=True, type=str2bool)
     parser.add_argument('--ckpt', default='checkpoint/dino_vit_small_16.pth', type=str)
     parser.add_argument('--distributed', default=False, type=str2bool)
     parser.add_argument('--train_resolution', default=224, type=int)

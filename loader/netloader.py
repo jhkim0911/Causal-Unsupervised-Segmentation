@@ -1,6 +1,7 @@
 from utils.utils import *
-from modules.segment_cnn import Segment_CNN
-from modules.segment_detr import Segment_DETR
+from modules.segment import Segment_MLP
+from modules.segment import Segment_TR
+from modules.segment_module import Cluster
 from torch.nn.parallel import DistributedDataParallel
 
 def network_loader(args, rank=0):
@@ -11,42 +12,41 @@ def network_loader(args, rank=0):
     freeze(net)
     return net
 
-def segment_cnn_loader(args, rank=0):
-    segment = Segment_CNN(args).cuda()
+def cluster_loader(args, rank):
+    cluster = Cluster(args).cuda()
 
-    if args.load_Best:
+    if args.load_cluster:
         baseline = args.ckpt.split('/')[-1].split('.')[0]
-        y = f'CUSS/{args.dataset}/{baseline}/{args.num_codebook}/best_cnn.pth'
-        segment.load_state_dict(torch.load(y, map_location=f'cuda:{rank}'), strict=False)
-        rprint(f'[Best] {y} loaded', rank)
-    elif args.load_Fine:
+        y = f'CUSS/{args.dataset}/{baseline}/{args.num_codebook}/cluster_tr.pth'
+        cluster.load_state_dict(torch.load(y, map_location=f'cuda:{rank}'), strict=False)
+        rprint(f'[Cluster] {y} loaded', rank)
+
+    if args.distributed:
+        cluster = DistributedDataParallel(cluster, device_ids=[rank])
+    return cluster
+
+def segment_mlp_loader(args, rank=0):
+    segment = Segment_MLP(args).cuda()
+
+    if args.load_segment:
         baseline = args.ckpt.split('/')[-1].split('.')[0]
-        y = f'CUSS/{args.dataset}/{baseline}/{args.num_codebook}/finetune_cnn.pth'
+        y = f'CUSS/{args.dataset}/{baseline}/{args.num_codebook}/segment_mlp.pth'
         segment.load_state_dict(torch.load(y, map_location=f'cuda:{rank}'), strict=False)
-        rprint(f'[Fine] {y} loaded', rank)
-    else:
-        rprint('No Pretrained', rank)
+        rprint(f'[Segment] {y} loaded', rank)
 
     if args.distributed:
         segment = DistributedDataParallel(segment, device_ids=[rank])
 
     return segment
 
-def segment_detr_loader(args, rank=0):
-    segment = Segment_DETR(args).cuda()
+def segment_tr_loader(args, rank=0):
+    segment = Segment_TR(args).cuda()
 
-    if args.load_Best:
+    if args.load_segment:
         baseline = args.ckpt.split('/')[-1].split('.')[0]
-        y = f'CUSS/{args.dataset}/{baseline}/{args.num_codebook}/best_detr.pth'
+        y = f'CUSS/{args.dataset}/{baseline}/{args.num_codebook}/segment_tr.pth'
         segment.load_state_dict(torch.load(y, map_location=f'cuda:{rank}'), strict=False)
-        rprint(f'[Best] {y} loaded', rank)
-    elif args.load_Fine:
-        baseline = args.ckpt.split('/')[-1].split('.')[0]
-        y = f'CUSS/{args.dataset}/{baseline}/{args.num_codebook}/finetune_detr.pth'
-        segment.load_state_dict(torch.load(y, map_location=f'cuda:{rank}'), strict=False)
-        rprint(f'[Fine] {y} loaded', rank)
-    else:
-        rprint('No Pretrained', rank)
+        rprint(f'[Segment] {y} loaded', rank)
 
     if args.distributed:
         segment = DistributedDataParallel(segment, device_ids=[rank])
