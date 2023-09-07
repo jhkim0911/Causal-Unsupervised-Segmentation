@@ -9,7 +9,7 @@ from utils.utils import *
 import torch.distributed as dist
 import torch.multiprocessing as mp
 import torch.backends.cudnn as cudnn
-from modules.segment_module import transform, stochastic_sampling, ema_init, ema_update
+from modules.segment_module import stochastic_sampling, ema_init, ema_update
 from loader.dataloader import dataloader
 from torch.cuda.amp import autocast, GradScaler
 from loader.netloader import network_loader, segment_mlp_loader, cluster_loader
