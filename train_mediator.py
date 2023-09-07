@@ -108,7 +108,7 @@ def main(rank, args, ngpus_per_node):
     if args.distributed: net = net.module; cluster = cluster.module
 
     # optimizer and scheduler
-    optimizer = torch.optim.AdamW(cluster.parameters(), lr=1e-3 * ngpus_per_node)
+    optimizer = torch.optim.AdamW(cluster.parameters(), lr=1e-2 * ngpus_per_node)
     scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.2)
 
     # evaluation

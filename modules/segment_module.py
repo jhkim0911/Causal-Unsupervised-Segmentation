@@ -392,7 +392,7 @@ def compute_modularity_based_codebook(c, x, temp=0.1, grid=False):
     # tanh with temperature
     D = C.transpose(2, 1)
     E = torch.tanh(D.unsqueeze(3) @ D.unsqueeze(2) / temp)
-    delta, ind = E.max(dim=1)
+    delta, _ = E.max(dim=1)
     Q = (W / e) @ delta
 
     # trace
