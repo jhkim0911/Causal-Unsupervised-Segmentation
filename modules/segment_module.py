@@ -37,14 +37,14 @@ class ProjectionSegment(nn.Module):
 
 class TRDecoder(nn.Module):
 
-    def __init__(self, dim, reduced_dim, hidden_dim=2048, nhead=1, dropout=0.1):
+    def __init__(self, dim, reduced_dim, nhead=1, dropout=0.1):
         super().__init__()
         self.self_attn = nn.MultiheadAttention(dim, nhead, dropout=dropout)
         self.multihead_attn = nn.MultiheadAttention(dim, nhead, dropout=dropout)
 
-        self.linear1 = nn.Linear(dim, hidden_dim)
+        self.linear1 = nn.Linear(dim, reduced_dim)
         self.dropout = nn.Dropout(dropout)
-        self.linear2 = nn.Linear(hidden_dim, dim)
+        self.linear2 = nn.Linear(reduced_dim, dim)
 
         self.norm1 = nn.LayerNorm(dim)
         self.norm2 = nn.LayerNorm(dim)
