@@ -236,12 +236,12 @@ def main(rank, args):
         nice,
         test_loader)
     
-    # test_linear(
-    #     args,
-    #     net,
-    #     segment,
-    #     nice,
-    #     test_loader)
+    test_linear(
+        args,
+        net,
+        segment,
+        nice,
+        test_loader)
 
 
 if __name__ == "__main__":

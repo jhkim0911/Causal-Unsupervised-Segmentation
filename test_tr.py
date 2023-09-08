@@ -240,13 +240,13 @@ def main(rank, args):
     print(f'# of Parameters: {num_param(segment)/10**6:.2f}(M)') 
 
     # post-processing with crf and hungarian matching
-    # test_without_crf(
-    #     args,
-    #     net,
-    #     segment,
-    #     cluster,
-    #     nice,
-    #     test_loader)
+    test_without_crf(
+        args,
+        net,
+        segment,
+        cluster,
+        nice,
+        test_loader)
 
     # post-processing with crf and hungarian matching
     test(
