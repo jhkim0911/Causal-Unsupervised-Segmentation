@@ -71,7 +71,8 @@ class TRDecoder(nn.Module):
         tgt = memory + self.norm3(tgt)
         tgt = transform(tgt.transpose(0, 1))
         tgt = self.f1(drop(tgt)) + self.f2(drop(tgt))
-        return untransform(tgt)
+        tgt = untransform(tgt)
+        return tgt
 
 class Decoder(nn.Module):
     def __init__(self, args, codebook=None):

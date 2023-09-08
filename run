@@ -1,16 +1,16 @@
 #!/bin/bash
 # dataset="pascalvoc"
-# dataset="cityscapes"
-dataset="cocostuff27"
+dataset="cityscapes"
+# dataset="cocostuff27"
 
-# train_gpu="0,1,2,3"
-train_gpu="4,5,6,7"
+train_gpu="0,1,2,3"
+# train_gpu="4,5,6,7"
 
 # Checkpoint Candidates
 # DINO
-# ckpt="checkpoint/dino_vit_small_8.pth"
+ckpt="checkpoint/dino_vit_small_8.pth"
 # ckpt="checkpoint/dino_vit_small_16.pth"
-ckpt="checkpoint/dino_vit_base_8.pth"
+# ckpt="checkpoint/dino_vit_base_8.pth"
 # ckpt="checkpoint/dino_vit_base_16.pth"
 
 # DINOv2
@@ -29,7 +29,7 @@ ckpt="checkpoint/dino_vit_base_8.pth"
 
 # Non-Changeable Variable
 test_gpu="${train_gpu:0}"
-port=$(($RANDOM%1000+1000))
+port=$(($RANDOM%800+1200))
 
 # Mediator
 # python train_mediator.py --dataset $dataset --ckpt $ckpt --gpu $train_gpu --port $port

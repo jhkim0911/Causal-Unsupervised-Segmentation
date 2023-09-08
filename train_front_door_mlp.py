@@ -17,7 +17,6 @@ from tensorboardX import SummaryWriter
 
 cudnn.benchmark = True
 scaler = GradScaler()
-scaler_cluster = GradScaler()
 
 # tensorboard
 counter = 0
@@ -231,7 +230,7 @@ def main(rank, args, ngpus_per_node):
     ###################################################################################
 
     # optimizer
-    optimizer_segment = torch.optim.AdamW(segment.parameters(), lr=1e-4 * ngpus_per_node)
+    optimizer_segment = torch.optim.Adam(segment.parameters(), lr=1e-3 * ngpus_per_node)
 
     # tensorboard
     if (args.distributed == True) and (rank == 0):

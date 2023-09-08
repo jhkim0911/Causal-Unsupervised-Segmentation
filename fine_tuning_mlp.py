@@ -13,7 +13,6 @@ from loader.netloader import network_loader, segment_mlp_loader, cluster_loader
 
 cudnn.benchmark = True
 scaler = GradScaler()
-scaler_cluster = GradScaler()
 
 def ddp_setup(args, rank, world_size):
     os.environ['MASTER_ADDR'] = 'localhost'
