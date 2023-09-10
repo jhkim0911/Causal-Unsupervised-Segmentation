@@ -9,10 +9,12 @@ import torch.multiprocessing as mp
 import torch.backends.cudnn as cudnn
 from loader.dataloader import dataloader
 from torch.cuda.amp import autocast, GradScaler
-from loader.netloader import network_loader, segment_tr_loader, cluster_loader
+from loader.netloader import network_loader, segment_tr_loader, cluster_tr_loader
 
 cudnn.benchmark = True
 scaler = GradScaler()
+
+cmap = create_pascal_label_colormap()
 
 def ddp_setup(args, rank, world_size):
     os.environ['MASTER_ADDR'] = 'localhost'
@@ -47,6 +49,9 @@ def train(args, net, segment, cluster, train_loader, optimizer_segment, optimize
             img = batch["img"].cuda()
             label = batch["label"].cuda()
 
+            a = invTrans(img)[1].permute(1,2,0)
+            b = cmap[label[1].cpu()][0]
+
             # intermediate features
             feat = net(img)[:, 1:, :]
             seg_feat_ema = segment.head_ema(feat, segment.dropout)
@@ -69,9 +74,8 @@ def train(args, net, segment, cluster, train_loader, optimizer_segment, optimize
         optimizer_segment.zero_grad()
         optimizer_cluster.zero_grad()
         scaler.scale(loss).backward()
-        if args.dataset=='cityscapes':
-            scaler.unscale_(optimizer_cluster)
-            torch.nn.utils.clip_grad_norm_(segment.parameters(), 1)
+        scaler.unscale_(optimizer_segment)
+        torch.nn.utils.clip_grad_norm_(segment.parameters(), 1)
         scaler.step(optimizer_segment)
         scaler.step(optimizer_cluster)
         scaler.update()
@@ -173,7 +177,7 @@ def main(rank, args, ngpus_per_node):
     # network loader
     net = network_loader(args, rank)
     segment = segment_tr_loader(args, rank)
-    cluster = cluster_loader(args, rank)
+    cluster = cluster_tr_loader(args, rank)
 
     # distributed parsing
     if args.distributed: net = net.module; segment = segment.module; cluster = cluster.module
@@ -274,7 +278,7 @@ if __name__ == "__main__":
     # model parameter
     parser.add_argument('--data_dir', default='/mnt/hard2/lbk-iccv/datasets/', type=str)
     parser.add_argument('--dataset', default='pascalvoc', type=str)
-    parser.add_argument('--ckpt', default='checkpoint/dino_vit_base_16.pth', type=str)
+    parser.add_argument('--ckpt', default='checkpoint/dino_vit_base_8.pth', type=str)
     parser.add_argument('--epoch', default=5, type=int)
     parser.add_argument('--distributed', default=True, type=str2bool)
     parser.add_argument('--load_segment', default=False, type=str2bool)

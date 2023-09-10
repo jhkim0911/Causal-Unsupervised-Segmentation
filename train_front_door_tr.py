@@ -12,7 +12,7 @@ import torch.backends.cudnn as cudnn
 from modules.segment_module import stochastic_sampling, ema_init, ema_update
 from loader.dataloader import dataloader
 from torch.cuda.amp import autocast, GradScaler
-from loader.netloader import network_loader, segment_tr_loader, cluster_loader
+from loader.netloader import network_loader, segment_tr_loader, cluster_tr_loader
 from tensorboardX import SummaryWriter
 
 cudnn.benchmark = True
@@ -202,7 +202,7 @@ def main(rank, args, ngpus_per_node):
     # network loader
     net = network_loader(args, rank)
     segment = segment_tr_loader(args, rank)
-    cluster = cluster_loader(args, rank)
+    cluster = cluster_tr_loader(args, rank)
 
     # distributed parsing
     if args.distributed: net = net.module; segment = segment.module; cluster = cluster.module

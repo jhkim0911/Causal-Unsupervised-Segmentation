@@ -5,7 +5,7 @@ from utils.utils import *
 from modules.segment_module import transform, untransform
 from loader.dataloader import dataloader
 from torch.cuda.amp import autocast
-from loader.netloader import network_loader, segment_tr_loader, cluster_loader
+from loader.netloader import network_loader, segment_tr_loader, cluster_tr_loader
 
 
 def test(args, net, segment, cluster, nice, test_loader, cmap):
@@ -205,7 +205,7 @@ def main(rank, args):
     # network loader
     net = network_loader(args, rank)
     segment = segment_tr_loader(args, rank)
-    cluster = cluster_loader(args, rank)
+    cluster = cluster_tr_loader(args, rank)
 
     # evaluation
     nice = NiceTool(args.n_classes)
@@ -240,13 +240,13 @@ def main(rank, args):
     print(f'# of Parameters: {num_param(segment)/10**6:.2f}(M)') 
 
     # post-processing with crf and hungarian matching
-    test_without_crf(
-        args,
-        net,
-        segment,
-        cluster,
-        nice,
-        test_loader)
+    # test_without_crf(
+    #     args,
+    #     net,
+    #     segment,
+    #     cluster,
+    #     nice,
+    #     test_loader)
 
     # post-processing with crf and hungarian matching
     test(
@@ -259,19 +259,19 @@ def main(rank, args):
         cmap)
     
     # post-processing with crf and hungarian matching
-    test_linear_without_crf(
-        args,
-        net,
-        segment,
-        nice,
-        test_loader)
+    # test_linear_without_crf(
+    #     args,
+    #     net,
+    #     segment,
+    #     nice,
+    #     test_loader)
     
-    test_linear(
-        args,
-        net,
-        segment,
-        nice,
-        test_loader)
+    # test_linear(
+    #     args,
+    #     net,
+    #     segment,
+    #     nice,
+    #     test_loader)
 
 
 if __name__ == "__main__":
@@ -283,15 +283,15 @@ if __name__ == "__main__":
     parser.add_argument('--data_dir', default='/mnt/hard2/lbk-iccv/datasets', type=str)
     parser.add_argument('--dataset', default='cocostuff27', type=str)
     parser.add_argument('--port', default='12355', type=str)
-    parser.add_argument('--ckpt', default='checkpoint/dino_vit_base_8.pth', type=str)
+    parser.add_argument('--ckpt', default='checkpoint/dino_vit_small_16.pth', type=str)
     parser.add_argument('--distributed', default=False, type=str2bool)
     parser.add_argument('--load_segment', default=True, type=str2bool)
     parser.add_argument('--load_cluster', default=True, type=str2bool)
     parser.add_argument('--train_resolution', default=320, type=int)
     parser.add_argument('--test_resolution', default=320, type=int)
-    parser.add_argument('--batch_size', default=16, type=int)
+    parser.add_argument('--batch_size', default=64, type=int)
     parser.add_argument('--num_workers', default=int(os.cpu_count() / 8), type=int)
-    parser.add_argument('--gpu', default='0', type=str)
+    parser.add_argument('--gpu', default='4', type=str)
     parser.add_argument('--num_codebook', default=2048, type=int)
 
     # model parameter

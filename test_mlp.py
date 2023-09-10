@@ -5,7 +5,7 @@ from utils.utils import *
 from loader.dataloader import dataloader
 from torch.cuda.amp import autocast
 from modules.segment_module import transform, untransform
-from loader.netloader import network_loader, segment_mlp_loader, cluster_loader
+from loader.netloader import network_loader, segment_mlp_loader, cluster_mlp_loader
 
 
 def test(args, net, segment, cluster, nice, test_loader, cmap):
@@ -183,6 +183,15 @@ def test_linear(args, net, segment, nice, test_loader):
     # evaludation metric reset
     nice.reset()
 
+
+def pickle_path_and_exist(args):
+    from os.path import exists
+    baseline = args.ckpt.split('/')[-1].split('.')[0]
+    check_dir(f'CUSS/{args.dataset}/modularity/{baseline}/{args.num_codebook}')
+    filepath = f'CUSS/{args.dataset}/modularity/{baseline}/{args.num_codebook}/modular.npy'
+    return filepath, exists(filepath)
+
+
 def main(rank, args):
 
     # setting gpu id of this process
@@ -197,7 +206,7 @@ def main(rank, args):
     # network loader
     net = network_loader(args, rank)
     segment = segment_mlp_loader(args, rank)
-    cluster = cluster_loader(args, rank)
+    cluster = cluster_mlp_loader(args, rank)
 
     # evaluation
     nice = NiceTool(args.n_classes)
@@ -206,7 +215,28 @@ def main(rank, args):
     cmap = create_cityscapes_colormap() if args.dataset == 'cityscapes' else create_pascal_label_colormap()
     
     # param size
-    print(f'# of Parameters: {segment.num_param/10**6:.2f}(M)') 
+    print(f'# of Parameters: {num_param(segment)/10**6:.2f}(M)') 
+
+    ###################################################################################
+    # First, run train_mediator.py
+    path, is_exist = pickle_path_and_exist(args)
+
+    # early save for time
+    if is_exist:
+        # load
+        codebook = np.load(path)
+        cb = torch.from_numpy(codebook).cuda()
+        cluster.codebook.data = cb
+        cluster.codebook.requires_grad = False
+
+        # print successful loading modularity
+        rprint(f'Modularity {path} loaded', rank)
+
+    else:
+        rprint('Train Modularity-based Codebook First', rank)
+        return
+    ###################################################################################
+
 
 
     # post-processing with crf and hungarian matching
@@ -229,19 +259,19 @@ def main(rank, args):
         cmap)
     
     # post-processing with crf and hungarian matching
-    test_linear_without_crf(
-        args,
-        net,
-        segment,
-        nice,
-        test_loader)
+    # test_linear_without_crf(
+    #     args,
+    #     net,
+    #     segment,
+    #     nice,
+    #     test_loader)
     
-    test_linear(
-        args,
-        net,
-        segment,
-        nice,
-        test_loader)
+    # test_linear(
+    #     args,
+    #     net,
+    #     segment,
+    #     nice,
+    #     test_loader)
 
 
 if __name__ == "__main__":
@@ -258,7 +288,7 @@ if __name__ == "__main__":
     parser.add_argument('--distributed', default=False, type=str2bool)
     parser.add_argument('--train_resolution', default=224, type=int)
     parser.add_argument('--test_resolution', default=320, type=int)
-    parser.add_argument('--batch_size', default=16, type=int)
+    parser.add_argument('--batch_size', default=64, type=int)
     parser.add_argument('--num_workers', default=int(os.cpu_count() / 8), type=int)
     parser.add_argument('--gpu', default='0', type=str)
     parser.add_argument('--num_codebook', default=2048, type=int)

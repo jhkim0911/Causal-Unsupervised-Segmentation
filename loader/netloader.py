@@ -12,7 +12,21 @@ def network_loader(args, rank=0):
     freeze(net)
     return net
 
-def cluster_loader(args, rank):
+def cluster_mlp_loader(args, rank):
+    cluster = Cluster(args).cuda()
+
+    if args.load_cluster:
+        baseline = args.ckpt.split('/')[-1].split('.')[0]
+        y = f'CUSS/{args.dataset}/{baseline}/{args.num_codebook}/cluster_mlp.pth'
+        cluster.load_state_dict(torch.load(y, map_location=f'cuda:{rank}'), strict=False)
+        rprint(f'[Cluster] {y} loaded', rank)
+
+    if args.distributed:
+        cluster = DistributedDataParallel(cluster, device_ids=[rank])
+    return cluster
+
+
+def cluster_tr_loader(args, rank):
     cluster = Cluster(args).cuda()
 
     if args.load_cluster:
@@ -41,6 +55,15 @@ def segment_mlp_loader(args, rank=0):
 
 def segment_tr_loader(args, rank=0):
     segment = Segment_TR(args).cuda()
+
+    if args.dataset=='pascalvoc':
+        baseline = args.ckpt.split('/')[-1].split('.')[0]
+        y = f'CUSS/cocostuff27/{baseline}/{args.num_codebook}/segment_tr.pth'
+        a = torch.load(y, map_location=f'cuda:{rank}')
+        del a['linear.f.weight']
+        del a['linear.f.bias']
+        segment.load_state_dict(a, strict=False)
+        rprint(f'[Segment] {y} loaded', rank)
 
     if args.load_segment:
         baseline = args.ckpt.split('/')[-1].split('.')[0]

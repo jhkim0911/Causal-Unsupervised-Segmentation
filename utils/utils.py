@@ -184,14 +184,6 @@ class NiceTool(object):
                               minlength=self.n_classes ** 2).reshape(self.n_classes, self.n_classes).t().cuda()
         return hist
 
-    def feat_to_scikit_cluster(self, img, cluster_feat, kmeans):
-        B, D, P, P = cluster_feat.shape
-        norm_cluster_feat = cluster_feat.reshape(B, D, -1).permute(0, 2, 1).reshape(-1, D)
-        kmeans_preds = torch.from_numpy(kmeans.predict(norm_cluster_feat.cpu().numpy())).reshape(B, P, P)
-        onehot = F.one_hot(kmeans_preds.to(torch.int64), self.n_classes).to(torch.float32)
-        crf_preds = do_crf(Pool(40), img, onehot.permute(0, 3, 1, 2)).argmax(1).cuda()
-        return kmeans_preds, crf_preds
-
     def eval(self, pred, label, is_reset=False):
         pred = pred.reshape(-1)
         label = label.reshape(-1)

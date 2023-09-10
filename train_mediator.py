@@ -8,7 +8,7 @@ import torch.backends.cudnn as cudnn
 from modules.segment_module import transform, untransform, quantize_index, compute_modularity_based_codebook
 from loader.dataloader import dataloader
 from torch.cuda.amp import autocast, GradScaler
-from loader.netloader import network_loader, cluster_loader
+from loader.netloader import network_loader, cluster_mlp_loader
 
 cudnn.benchmark = True
 scaler = GradScaler()
@@ -102,7 +102,7 @@ def main(rank, args, ngpus_per_node):
 
     # network loader
     net = network_loader(args, rank)
-    cluster = cluster_loader(args, rank)
+    cluster = cluster_mlp_loader(args, rank)
 
     # distributed parsing
     if args.distributed: net = net.module; cluster = cluster.module
@@ -184,10 +184,10 @@ if __name__ == "__main__":
     # dataset and baseline
     parser.add_argument('--data_dir', default='/mnt/hard2/lbk-iccv/datasets', type=str)
     parser.add_argument('--dataset', default='pascalvoc', type=str)
-    parser.add_argument('--ckpt', default='checkpoint/dino_vit_base_16.pth', type=str)
+    parser.add_argument('--ckpt', default='checkpoint/dino_vit_small_8.pth', type=str)
 
     # DDP
-    parser.add_argument('--gpu', default='0,1,2,3', type=str)
+    parser.add_argument('--gpu', default='4,5,6,7', type=str)
     parser.add_argument('--port', default='12355', type=str)
 
     # parameter

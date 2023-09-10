@@ -9,7 +9,7 @@ import torch.multiprocessing as mp
 import torch.backends.cudnn as cudnn
 from loader.dataloader import dataloader
 from torch.cuda.amp import autocast, GradScaler
-from loader.netloader import network_loader, segment_mlp_loader, cluster_loader
+from loader.netloader import network_loader, segment_mlp_loader, cluster_mlp_loader
 
 cudnn.benchmark = True
 scaler = GradScaler()
@@ -170,14 +170,14 @@ def main(rank, args, ngpus_per_node):
     # network loader
     net = network_loader(args, rank)
     segment = segment_mlp_loader(args, rank)
-    cluster = cluster_loader(args, rank)
+    cluster = cluster_mlp_loader(args, rank)
 
     # distributed parsing
     if args.distributed: net = net.module; segment = segment.module; cluster = cluster.module
 
     # optimizer
-    optimizer_segment = torch.optim.AdamW(segment.parameters(), lr=1e-4 * ngpus_per_node, weight_decay=1e-4)
-    optimizer_cluster = torch.optim.AdamW(cluster.parameters(), lr=1e-2 * ngpus_per_node)
+    optimizer_segment = torch.optim.Adam(segment.parameters(), lr=1e-3 * ngpus_per_node, weight_decay=1e-4)
+    optimizer_cluster = torch.optim.Adam(cluster.parameters(), lr=1e-3 * ngpus_per_node)
     
     # scheduler
     scheduler_segment = torch.optim.lr_scheduler.StepLR(optimizer_segment, step_size=2, gamma=0.5)
@@ -195,10 +195,8 @@ def main(rank, args, ngpus_per_node):
         # load
         codebook = np.load(path)
         cb = torch.from_numpy(codebook).cuda()
-        segment.codebook.data = cb
-        segment.codebook.requires_grad = False
-        segment.head.codebook = cb
-        segment.head_ema.codebook = cb
+        cluster.codebook.data = cb
+        cluster.codebook.requires_grad = False
 
         # print successful loading modularity
         rprint(f'Modularity {path} loaded', rank)
@@ -275,7 +273,7 @@ if __name__ == "__main__":
     parser.add_argument('--ckpt', default='checkpoint/dino_vit_base_16.pth', type=str)
     parser.add_argument('--epoch', default=5, type=int)
     parser.add_argument('--distributed', default=True, type=str2bool)
-    parser.add_argument('--load_segment', default=True, type=str2bool)
+    parser.add_argument('--load_segment', default=False, type=str2bool)
     parser.add_argument('--load_cluster', default=False, type=str2bool)
     parser.add_argument('--train_resolution', default=224, type=int)
     parser.add_argument('--test_resolution', default=320, type=int)
