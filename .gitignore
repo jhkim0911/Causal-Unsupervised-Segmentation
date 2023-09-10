@@ -8,5 +8,6 @@ visualize_distance_matrix.py
 scikit_cluster.py
 linear_probing_mlp.py
 linear_probing_tr.py
+crop.py
 */__pycache__
 __pycache__

@@ -74,9 +74,6 @@ def train(args, net, segment, cluster, train_loader, optimizer_segment, optimize
         optimizer_segment.zero_grad()
         optimizer_cluster.zero_grad()
         scaler.scale(loss).backward()
-        if args.dataset=='cityscapses':
-            scaler.unscale_(optimizer_segment)
-            torch.nn.utils.clip_grad_norm_(segment.parameters(), 1)
         scaler.step(optimizer_segment)
         scaler.step(optimizer_cluster)
         scaler.update()
