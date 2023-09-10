@@ -74,8 +74,9 @@ def train(args, net, segment, cluster, train_loader, optimizer_segment, optimize
         optimizer_segment.zero_grad()
         optimizer_cluster.zero_grad()
         scaler.scale(loss).backward()
-        scaler.unscale_(optimizer_segment)
-        torch.nn.utils.clip_grad_norm_(segment.parameters(), 1)
+        if args.dataset=='cityscapses':
+            scaler.unscale_(optimizer_segment)
+            torch.nn.utils.clip_grad_norm_(segment.parameters(), 1)
         scaler.step(optimizer_segment)
         scaler.step(optimizer_cluster)
         scaler.update()
@@ -183,7 +184,7 @@ def main(rank, args, ngpus_per_node):
     if args.distributed: net = net.module; segment = segment.module; cluster = cluster.module
 
     # optimizer
-    optimizer_segment = torch.optim.Adam(segment.parameters(), lr=1e-3 * ngpus_per_node, weight_decay=1e-4)
+    optimizer_segment = torch.optim.Adam(segment.parameters(), lr=1e-3 * ngpus_per_node, weight_decay=1e-3)
     optimizer_cluster = torch.optim.Adam(cluster.parameters(), lr=1e-3 * ngpus_per_node)
     
     # scheduler

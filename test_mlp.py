@@ -288,7 +288,7 @@ if __name__ == "__main__":
     parser.add_argument('--distributed', default=False, type=str2bool)
     parser.add_argument('--train_resolution', default=224, type=int)
     parser.add_argument('--test_resolution', default=320, type=int)
-    parser.add_argument('--batch_size', default=64, type=int)
+    parser.add_argument('--batch_size', default=32, type=int)
     parser.add_argument('--num_workers', default=int(os.cpu_count() / 8), type=int)
     parser.add_argument('--gpu', default='0', type=str)
     parser.add_argument('--num_codebook', default=2048, type=int)
