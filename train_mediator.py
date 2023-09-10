@@ -137,15 +137,6 @@ def main(rank, args, ngpus_per_node):
                 train_loader,
                 optimizer)
 
-            test(
-                epoch, # for decorator
-                rank, # for decorator
-                args,
-                net,
-                cluster,
-                nice,
-                test_loader)
-
             # scheduler step
             scheduler.step()
 

@@ -185,9 +185,19 @@ def test_linear(args, net, segment, nice, test_loader):
 
 def pickle_path_and_exist(args):
     from os.path import exists
-    baseline = args.ckpt.split('/')[-1].split('.')[0]
-    check_dir(f'CUSS/{args.dataset}/modularity/{baseline}/{args.num_codebook}')
-    filepath = f'CUSS/{args.dataset}/modularity/{baseline}/{args.num_codebook}/modular.npy'
+
+    if args.dataset=='coco81':
+        baseline = args.ckpt.split('/')[-1].split('.')[0]
+        check_dir(f'CUSS/cocostuff27/modularity/{baseline}/{args.num_codebook}')
+        filepath = f'CUSS/cocostuff27/modularity/{baseline}/{args.num_codebook}/modular.npy'
+    elif args.dataset=='coco171':
+        baseline = args.ckpt.split('/')[-1].split('.')[0]
+        check_dir(f'CUSS/cocostuff27/modularity/{baseline}/{args.num_codebook}')
+        filepath = f'CUSS/cocostuff27/modularity/{baseline}/{args.num_codebook}/modular.npy'
+    else:
+        baseline = args.ckpt.split('/')[-1].split('.')[0]
+        check_dir(f'CUSS/{args.dataset}/modularity/{baseline}/{args.num_codebook}')
+        filepath = f'CUSS/{args.dataset}/modularity/{baseline}/{args.num_codebook}/modular.npy'
     return filepath, exists(filepath)
 
 
@@ -240,13 +250,13 @@ def main(rank, args):
     print(f'# of Parameters: {num_param(segment)/10**6:.2f}(M)') 
 
     # post-processing with crf and hungarian matching
-    # test_without_crf(
-    #     args,
-    #     net,
-    #     segment,
-    #     cluster,
-    #     nice,
-    #     test_loader)
+    test_without_crf(
+        args,
+        net,
+        segment,
+        cluster,
+        nice,
+        test_loader)
 
     # post-processing with crf and hungarian matching
     test(
@@ -289,7 +299,7 @@ if __name__ == "__main__":
     parser.add_argument('--load_cluster', default=True, type=str2bool)
     parser.add_argument('--train_resolution', default=320, type=int)
     parser.add_argument('--test_resolution', default=320, type=int)
-    parser.add_argument('--batch_size', default=64, type=int)
+    parser.add_argument('--batch_size', default=32, type=int)
     parser.add_argument('--num_workers', default=int(os.cpu_count() / 8), type=int)
     parser.add_argument('--gpu', default='4', type=str)
     parser.add_argument('--num_codebook', default=2048, type=int)

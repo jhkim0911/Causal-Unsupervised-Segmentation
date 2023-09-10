@@ -155,9 +155,19 @@ def test(args, net, segment, cluster, nice, test_loader):
 
 def pickle_path_and_exist(args):
     from os.path import exists
-    baseline = args.ckpt.split('/')[-1].split('.')[0]
-    check_dir(f'CUSS/{args.dataset}/modularity/{baseline}/{args.num_codebook}')
-    filepath = f'CUSS/{args.dataset}/modularity/{baseline}/{args.num_codebook}/modular.npy'
+
+    if args.dataset=='coco81':
+        baseline = args.ckpt.split('/')[-1].split('.')[0]
+        check_dir(f'CUSS/cocostuff27/modularity/{baseline}/{args.num_codebook}')
+        filepath = f'CUSS/cocostuff27/modularity/{baseline}/{args.num_codebook}/modular.npy'
+    elif args.dataset=='coco171':
+        baseline = args.ckpt.split('/')[-1].split('.')[0]
+        check_dir(f'CUSS/cocostuff27/modularity/{baseline}/{args.num_codebook}')
+        filepath = f'CUSS/cocostuff27/modularity/{baseline}/{args.num_codebook}/modular.npy'
+    else:
+        baseline = args.ckpt.split('/')[-1].split('.')[0]
+        check_dir(f'CUSS/{args.dataset}/modularity/{baseline}/{args.num_codebook}')
+        filepath = f'CUSS/{args.dataset}/modularity/{baseline}/{args.num_codebook}/modular.npy'
     return filepath, exists(filepath)
 
 
@@ -184,7 +194,7 @@ def main(rank, args, ngpus_per_node):
     if args.distributed: net = net.module; segment = segment.module; cluster = cluster.module
 
     # optimizer
-    optimizer_segment = torch.optim.Adam(segment.parameters(), lr=1e-3 * ngpus_per_node, weight_decay=1e-3)
+    optimizer_segment = torch.optim.Adam(segment.parameters(), lr=1e-3 * ngpus_per_node, weight_decay=1e-4)
     optimizer_cluster = torch.optim.Adam(cluster.parameters(), lr=1e-3 * ngpus_per_node)
     
     # scheduler

@@ -22,8 +22,8 @@ def dataloader(args, no_ddp_train_shuffle=True):
         args.n_classes = 27
     elif args.dataset == "pascalvoc":
         args.n_classes = 21
-    elif args.dataset == "coco80":
-        args.n_classes = 80
+    elif args.dataset == "coco81":
+        args.n_classes = 81
     elif args.dataset == "coco171":
         args.n_classes = 171
 
@@ -68,6 +68,364 @@ def dataloader(args, no_ddp_train_shuffle=True):
     sampler = train_sampler if args.distributed else None
 
     return train_loader, test_loader, sampler
+
+
+
+class Coco81(Dataset):
+    def __init__(self, root, image_set, transform, target_transform,
+                 coarse_labels, exclude_things, subset=None):
+        super(Coco, self).__init__()
+        self.split = image_set
+        self.root = join(root, "cocostuff")
+        self.coarse_labels = coarse_labels
+        self.transform = transform
+        self.label_transform = target_transform
+        self.subset = subset
+        self.exclude_things = exclude_things
+
+        if self.subset is None:
+            self.image_list = "Coco164kFull_Stuff_Coarse.txt"
+        elif self.subset == 6:  # IIC Coarse
+            self.image_list = "Coco164kFew_Stuff_6.txt"
+        elif self.subset == 7:  # IIC Fine
+            self.image_list = "Coco164kFull_Stuff_Coarse_7.txt"
+
+        assert self.split in ["train", "val", "train+val"]
+        split_dirs = {
+            "train": ["train2017"],
+            "val": ["val2017"],
+            "train+val": ["train2017", "val2017"]
+        }
+
+        self.image_files = []
+        self.label_files = []
+        for split_dir in split_dirs[self.split]:
+            with open(join(self.root, "curated", split_dir, self.image_list), "r") as f:
+                img_ids = [fn.rstrip() for fn in f.readlines()]
+                for img_id in img_ids:
+                    self.image_files.append(join(self.root, "images", split_dir, img_id + ".jpg"))
+                    self.label_files.append(join(self.root, "annotations", split_dir, img_id + ".png"))
+
+        self.fine_to_coarse = {0: 1, 1: 2, 2: 3, 3: 4, 4: 5, 5: 6, 
+                               6: 7, 7: 8, 8: 9, 9: 10, 10: 11, 
+                               12: 12, 13: 13, 14: 14, 15: 15, 
+                               16: 16, 17: 17, 18: 18, 19: 19, 20: 20, 
+                               21: 21, 22: 22, 23: 23, 24: 24, 26: 25, 
+                               27: 26, 30: 27, 31: 28, 32: 29, 33: 30, 
+                               34: 31, 35: 32, 36: 33, 37: 34, 38: 35, 
+                               39: 36, 40: 37, 41: 38, 42: 39, 43: 40, 
+                               45: 41, 46: 42, 47: 43, 48: 44, 49: 45, 
+                               50: 46, 51: 47, 52: 48, 53: 49, 54: 50, 
+                               55: 51, 56: 52, 57: 53, 58: 54, 59: 55, 
+                               60: 56, 61: 57, 62: 58, 63: 59, 64: 60, 
+                               66: 61, 69: 62, 71: 63, 72: 64, 73: 65, 
+                               74: 66, 75: 67, 76: 68, 77: 69, 78: 70, 
+                               79: 71, 80: 72, 81: 73, 83: 74, 84: 75, 
+                               85: 76, 86: 77, 87: 78, 88: 79, 89: 80, 
+                               91: 0, 92: 0, 93: 0, 94: 0, 95: 0, 96: 0, 
+                               97: 0, 98: 0, 99: 0, 100: 0, 101: 0, 102: 0, 
+                               103: 0, 104: 0, 105: 0, 106: 0, 107: 0, 108: 0, 
+                               109: 0, 110: 0, 111: 0, 112: 0, 113: 0, 114: 0, 
+                               115: 0, 116: 0, 117: 0, 118: 0, 119: 0, 120: 0, 
+                               121: 0, 122: 0, 123: 0, 124: 0, 125: 0, 126: 0, 
+                               127: 0, 128: 0, 129: 0, 130: 0, 131: 0, 132: 0, 
+                               133: 0, 134: 0, 135: 0, 136: 0, 137: 0, 138: 0, 
+                               139: 0, 140: 0, 141: 0, 142: 0, 143: 0, 144: 0, 
+                               145: 0, 146: 0, 147: 0, 148: 0, 149: 0, 150: 0, 
+                               151: 0, 152: 0, 153: 0, 154: 0, 155: 0, 156: 0, 
+                               157: 0, 158: 0, 159: 0, 160: 0, 161: 0, 162: 0, 
+                               163: 0, 164: 0, 165: 0, 166: 0, 167: 0, 168: 0, 
+                               169: 0, 170: 0, 171: 0, 172: 0, 173: 0, 174: 0, 
+                               175: 0, 176: 0, 177: 0, 178: 0, 179: 0, 180: 0, 181: 0, 255: -1}
+
+        self._label_names = [
+            "ground-stuff",
+            "plant-stuff",
+            "sky-stuff",
+        ]
+        self.cocostuff3_coarse_classes = [23, 22, 21]
+        self.first_stuff_index = 12
+
+    def __getitem__(self, index):
+        image_path = self.image_files[index]
+        label_path = self.label_files[index]
+        seed = np.random.randint(2147483647)
+        random.seed(seed)
+        torch.manual_seed(seed)
+        img = self.transform(Image.open(image_path).convert("RGB"))
+
+        random.seed(seed)
+        torch.manual_seed(seed)
+        label = self.label_transform(Image.open(label_path)).squeeze(0)
+        label[label == 255] = -1  # to be consistent with 10k
+        coarse_label = torch.zeros_like(label)
+        for fine, coarse in self.fine_to_coarse.items():
+            coarse_label[label == fine] = coarse
+        coarse_label[label == -1] = -1
+
+        if self.coarse_labels:
+            coarser_labels = -torch.ones_like(label)
+            for i, c in enumerate(self.cocostuff3_coarse_classes):
+                coarser_labels[coarse_label == c] = i
+            return img, coarser_labels, coarser_labels >= 0
+        else:
+            if self.exclude_things:
+                return img, coarse_label - self.first_stuff_index, (coarse_label >= self.first_stuff_index)
+            else:
+                return img, coarse_label, coarse_label >= 0
+
+    def __len__(self):
+        return len(self.image_files)
+
+
+class Coco171(Dataset):
+    def __init__(self, root, image_set, transform, target_transform,
+                 coarse_labels, exclude_things, subset=None):
+        super(Coco, self).__init__()
+        self.split = image_set
+        self.root = join(root, "cocostuff")
+        self.coarse_labels = coarse_labels
+        self.transform = transform
+        self.label_transform = target_transform
+        self.subset = subset
+        self.exclude_things = exclude_things
+
+        if self.subset is None:
+            self.image_list = "Coco164kFull_Stuff_Coarse.txt"
+        elif self.subset == 6:  # IIC Coarse
+            self.image_list = "Coco164kFew_Stuff_6.txt"
+        elif self.subset == 7:  # IIC Fine
+            self.image_list = "Coco164kFull_Stuff_Coarse_7.txt"
+
+        assert self.split in ["train", "val", "train+val"]
+        split_dirs = {
+            "train": ["train2017"],
+            "val": ["val2017"],
+            "train+val": ["train2017", "val2017"]
+        }
+
+        self.image_files = []
+        self.label_files = []
+        for split_dir in split_dirs[self.split]:
+            with open(join(self.root, "curated", split_dir, self.image_list), "r") as f:
+                img_ids = [fn.rstrip() for fn in f.readlines()]
+                for img_id in img_ids:
+                    self.image_files.append(join(self.root, "images", split_dir, img_id + ".jpg"))
+                    self.label_files.append(join(self.root, "annotations", split_dir, img_id + ".png"))
+
+        self.fine_to_coarse = {
+                                0: 0,
+                                1: 1,
+                                2: 2,
+                                3: 3,
+                                4: 4,
+                                5: 5,
+                                6: 6,
+                                7: 7,
+                                8: 8,
+                                9: 9,
+                                10: 10,
+                                12: 11,
+                                13: 12,
+                                14: 13,
+                                15: 14,
+                                16: 15,
+                                17: 16,
+                                18: 17,
+                                19: 18,
+                                20: 19,
+                                21: 20,
+                                22: 21,
+                                23: 22,
+                                24: 23,
+                                26: 24,
+                                27: 25,
+                                30: 26,
+                                31: 27,
+                                32: 28,
+                                33: 29,
+                                34: 30,
+                                35: 31,
+                                36: 32,
+                                37: 33,
+                                38: 34,
+                                39: 35,
+                                40: 36,
+                                41: 37,
+                                42: 38,
+                                43: 39,
+                                45: 40,
+                                46: 41,
+                                47: 42,
+                                48: 43,
+                                49: 44,
+                                50: 45,
+                                51: 46,
+                                52: 47,
+                                53: 48,
+                                54: 49,
+                                55: 50,
+                                56: 51,
+                                57: 52,
+                                58: 53,
+                                59: 54,
+                                60: 55,
+                                61: 56,
+                                62: 57,
+                                63: 58,
+                                64: 59,
+                                66: 60,
+                                69: 61,
+                                71: 62,
+                                72: 63,
+                                73: 64,
+                                74: 65,
+                                75: 66,
+                                76: 67,
+                                77: 68,
+                                78: 69,
+                                79: 70,
+                                80: 71,
+                                81: 72,
+                                83: 73,
+                                84: 74,
+                                85: 75,
+                                86: 76,
+                                87: 77,
+                                88: 78,
+                                89: 79,
+                                91: 80,
+                                92: 81,
+                                93: 82,
+                                94: 83,
+                                95: 84,
+                                96: 85,
+                                97: 86,
+                                98: 87,
+                                99: 88,
+                                100: 89,
+                                101: 90,
+                                102: 91,
+                                103: 92,
+                                104: 93,
+                                105: 94,
+                                106: 95,
+                                107: 96,
+                                108: 97,
+                                109: 98,
+                                110: 99,
+                                111: 100,
+                                112: 101,
+                                113: 102,
+                                114: 103,
+                                115: 104,
+                                116: 105,
+                                117: 106,
+                                118: 107,
+                                119: 108,
+                                120: 109,
+                                121: 110,
+                                122: 111,
+                                123: 112,
+                                124: 113,
+                                125: 114,
+                                126: 115,
+                                127: 116,
+                                128: 117,
+                                129: 118,
+                                130: 119,
+                                131: 120,
+                                132: 121,
+                                133: 122,
+                                134: 123,
+                                135: 124,
+                                136: 125,
+                                137: 126,
+                                138: 127,
+                                139: 128,
+                                140: 129,
+                                141: 130,
+                                142: 131,
+                                143: 132,
+                                144: 133,
+                                145: 134,
+                                146: 135,
+                                147: 136,
+                                148: 137,
+                                149: 138,
+                                150: 139,
+                                151: 140,
+                                152: 141,
+                                153: 142,
+                                154: 143,
+                                155: 144,
+                                156: 145,
+                                157: 146,
+                                158: 147,
+                                159: 148,
+                                160: 149,
+                                161: 150,
+                                162: 151,
+                                163: 152,
+                                164: 153,
+                                165: 154,
+                                166: 155,
+                                167: 156,
+                                168: 157,
+                                169: 158,
+                                170: 159,
+                                171: 160,
+                                172: 161,
+                                173: 162,
+                                174: 163,
+                                175: 164,
+                                176: 165,
+                                177: 166,
+                                178: 167,
+                                179: 168,
+                                180: 169,
+                                181: 170,
+                                255: -1
+                            }
+
+        self._label_names = [
+            "ground-stuff",
+            "plant-stuff",
+            "sky-stuff",
+        ]
+        self.cocostuff3_coarse_classes = [23, 22, 21]
+        self.first_stuff_index = 12
+
+    def __getitem__(self, index):
+        image_path = self.image_files[index]
+        label_path = self.label_files[index]
+        seed = np.random.randint(2147483647)
+        random.seed(seed)
+        torch.manual_seed(seed)
+        img = self.transform(Image.open(image_path).convert("RGB"))
+
+        random.seed(seed)
+        torch.manual_seed(seed)
+        label = self.label_transform(Image.open(label_path)).squeeze(0)
+        label[label == 255] = -1  # to be consistent with 10k
+        coarse_label = torch.zeros_like(label)
+        for fine, coarse in self.fine_to_coarse.items():
+            coarse_label[label == fine] = coarse
+        coarse_label[label == -1] = -1
+
+        if self.coarse_labels:
+            coarser_labels = -torch.ones_like(label)
+            for i, c in enumerate(self.cocostuff3_coarse_classes):
+                coarser_labels[coarse_label == c] = i
+            return img, coarser_labels, coarser_labels >= 0
+        else:
+            if self.exclude_things:
+                return img, coarse_label - self.first_stuff_index, (coarse_label >= self.first_stuff_index)
+            else:
+                return img, coarse_label, coarse_label >= 0
+
+    def __len__(self):
+        return len(self.image_files)
 
 
 class Coco(Dataset):
@@ -223,7 +581,7 @@ class CroppedDataset(Dataset):
 
     def __getitem__(self, index):
         image = Image.open(join(self.img_dir, "{}.jpg".format(index))).convert('RGB')
-        target = Image.open(join(self.label_dir, "{}.png".format(index))) if index!=23385 else 0
+        target = Image.open(join(self.label_dir, "{}.png".format(index)))
 
         seed = np.random.randint(2147483647)
         random.seed(seed)
@@ -231,7 +589,7 @@ class CroppedDataset(Dataset):
         image = self.transform(image)
         random.seed(seed)
         torch.manual_seed(seed)
-        target = self.target_transform(target) if index!=23385 else torch.zeros([1, image.shape[1], image.shape[2]], dtype=torch.int64)
+        target = self.target_transform(target)
 
         target = target - 1
         mask = target == -1
@@ -302,14 +660,6 @@ class ContrastiveSegDataset(Dataset):
             self.n_classes = 27
             dataset_class = CroppedDataset
             extra_args = dict(dataset_name="cityscapes", crop_type=crop_type, crop_ratio=0.5)
-        elif dataset_name == "cocostuff3":
-            self.n_classes = 3
-            dataset_class = Coco
-            extra_args = dict(coarse_labels=True, subset=6, exclude_things=True)
-        elif dataset_name == "cocostuff15":
-            self.n_classes = 15
-            dataset_class = Coco
-            extra_args = dict(coarse_labels=False, subset=7, exclude_things=True)
         elif dataset_name == "cocostuff27" and crop_type is not None:
             self.n_classes = 27
             dataset_class = CroppedDataset
@@ -317,6 +667,18 @@ class ContrastiveSegDataset(Dataset):
         elif dataset_name == "cocostuff27" and crop_type is None:
             self.n_classes = 27
             dataset_class = Coco
+            extra_args = dict(coarse_labels=False, subset=None, exclude_things=False)
+            if image_set == "val":
+                extra_args["subset"] = 7
+        elif dataset_name == "coco81":
+            self.n_classes = 81
+            dataset_class = Coco81
+            extra_args = dict(coarse_labels=False, subset=None, exclude_things=False)
+            if image_set == "val":
+                extra_args["subset"] = 7
+        elif dataset_name == "coco171":
+            self.n_classes = 171
+            dataset_class = Coco171
             extra_args = dict(coarse_labels=False, subset=None, exclude_things=False)
             if image_set == "val":
                 extra_args["subset"] = 7
