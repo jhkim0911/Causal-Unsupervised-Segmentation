@@ -184,7 +184,7 @@ class NiceTool(object):
                               minlength=self.n_classes ** 2).reshape(self.n_classes, self.n_classes).t().cuda()
         return hist
 
-    def eval(self, pred, label, is_reset=False):
+    def eval(self, pred, label):
         pred = pred.reshape(-1)
         label = label.reshape(-1)
         self.histogram += self.scores(label, pred)
@@ -206,8 +206,12 @@ class NiceTool(object):
                        "mAP": prc[~torch.isnan(prc)].mean().item() * 100,
                        "Acc": opc.item() * 100})
 
-        # reset histogram
-        if is_reset: self.reset()
+
+        self.metric_by_class = OrderedDict({"mIoU": iou * 100,
+                       # "Precision per Class (%)": prc * 100,
+                       "mAP": prc * 100,
+                       "Acc": (tp / hist.sum(dim=1)) * 100})
+
 
         # generate desc
         sentence = ''
@@ -221,6 +225,40 @@ class NiceTool(object):
 
     def do_hungarian(self, clusters):
         return torch.tensor(self.assignments[1])[clusters.cpu()]
+
+
+class ManyToOneMatching(object):
+
+    def __init__(self, n_classes, x_times=1):
+        self.n_classes = n_classes
+        self.x_times = x_times
+        self.histogram = [torch.zeros((self.n_classes, self.n_classes)).cuda() for _ in range(self.x_times)]
+
+    def scores(self, label_trues, label_preds):
+        mask = (label_trues >= 0) & (label_trues < self.n_classes) & (label_preds >= 0) & (label_preds < self.n_classes)  # Exclude unlabelled data.
+        hist = torch.bincount(self.n_classes * label_trues[mask] + label_preds[mask], \
+                              minlength=self.n_classes ** 2).reshape(self.n_classes, self.n_classes).t().cuda()
+        return hist
+
+    def eval(self, pred, label):
+        pred = pred.reshape(-1)
+        label = label.reshape(-1)
+        
+        self.assignments = [0 for _ in range(self.x_times)]
+        for i in range(self.x_times):
+            shift_pred = pred - self.n_classes * i
+            self.histogram[i] += self.scores(label, shift_pred)
+            self.assignments[i] = linear_sum_assignment(self.histogram[i].cpu(), maximize=True)
+
+    def reset(self):
+        self.histogram = [torch.zeros((self.n_classes, self.n_classes)).cuda() for _ in range(self.x_times)]
+
+    def do_hungarian(self, clusters):
+        output = torch.zeros_like(clusters)
+        for i in range(self.x_times):
+            index = torch.where( (clusters-i*self.n_classes< self.n_classes) * (clusters-i*self.n_classes>=0))
+            output[index] = torch.tensor(self.assignments[i][1])[clusters[index].cpu()]
+        return output
 
 
 from scipy.optimize import linear_sum_assignment

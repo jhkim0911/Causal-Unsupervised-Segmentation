@@ -36,9 +36,6 @@ def dataloader(args, no_ddp_train_shuffle=True):
         transform=get_transform(args.train_resolution, False, "center"),
         target_transform=get_transform(args.train_resolution, True, "center"),
         num_neighbors=7,
-        mask=True,
-        pos_images=True,
-        pos_labels=True
     )
 
     if args.distributed: train_sampler = DistributedSampler(train_dataset, shuffle=True)
@@ -55,7 +52,6 @@ def dataloader(args, no_ddp_train_shuffle=True):
         image_set="val",
         transform=get_transform(args.test_resolution, False, "center"),
         target_transform=get_transform(args.test_resolution, True, "center"),
-        mask=True,
     )
 
     if args.distributed: test_sampler = DistributedSampler(test_dataset, shuffle=False)
@@ -74,7 +70,7 @@ def dataloader(args, no_ddp_train_shuffle=True):
 class Coco81(Dataset):
     def __init__(self, root, image_set, transform, target_transform,
                  coarse_labels, exclude_things, subset=None):
-        super(Coco, self).__init__()
+        super().__init__()
         self.split = image_set
         self.root = join(root, "cocostuff")
         self.coarse_labels = coarse_labels
@@ -181,7 +177,7 @@ class Coco81(Dataset):
 class Coco171(Dataset):
     def __init__(self, root, image_set, transform, target_transform,
                  coarse_labels, exclude_things, subset=None):
-        super(Coco, self).__init__()
+        super().__init__()
         self.split = image_set
         self.root = join(root, "cocostuff")
         self.coarse_labels = coarse_labels
@@ -571,7 +567,12 @@ class CroppedDataset(Dataset):
         super(CroppedDataset, self).__init__()
         self.dataset_name = dataset_name
         self.split = image_set
-        self.root = join(root, dataset_name, "cropped", "{}_{}_crop_{}".format(dataset_name, crop_type, crop_ratio))
+        if dataset_name=='coco171':
+            self.root = join(root, "cocostuff", "cropped", "coco171_{}_crop_{}".format(crop_type, crop_ratio))
+        elif dataset_name=='coco81':
+            self.root = join(root, "cocostuff", "cropped", "coco81_{}_crop_{}".format(crop_type, crop_ratio))
+        else:
+            self.root = join(root, dataset_name, "cropped", "{}_{}_crop_{}".format(dataset_name, crop_type, crop_ratio))
         self.transform = transform
         self.target_transform = target_transform
         self.img_dir = join(self.root, "img", self.split)
@@ -611,7 +612,7 @@ class PascalVOC(VOCSegmentation):
             self._set_seed(seed); image = self.transforms(image)
             self._set_seed(seed); label = self.target_transforms(label)
             label[label > 20] = -1
-        return image, label
+        return image, label.squeeze(0)
     
     def _set_seed(self, seed):
         random.seed(seed)
@@ -637,55 +638,53 @@ class ContrastiveSegDataset(Dataset):
                  aug_geometric_transform=None,
                  aug_photometric_transform=None,
                  num_neighbors=5,
-                 mask=False,
-                 pos_labels=False,
-                 pos_images=False,
                  extra_transform=None,
                  ):
         super(ContrastiveSegDataset).__init__()
         self.num_neighbors = num_neighbors
         self.image_set = image_set
         self.dataset_name = dataset_name
-        self.mask = mask
-        self.pos_labels = pos_labels
-        self.pos_images = pos_images
         self.extra_transform = extra_transform
         self.normalize = transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
 
+
+        # cityscapes, cocostuff27 
         if  dataset_name == "cityscapes" and crop_type is None:
-            self.n_classes = 27
             dataset_class = CityscapesSeg
             extra_args = dict()
         elif dataset_name == "cityscapes" and crop_type is not None:
-            self.n_classes = 27
             dataset_class = CroppedDataset
             extra_args = dict(dataset_name="cityscapes", crop_type=crop_type, crop_ratio=0.5)
         elif dataset_name == "cocostuff27" and crop_type is not None:
-            self.n_classes = 27
             dataset_class = CroppedDataset
             extra_args = dict(dataset_name="cocostuff", crop_type="five", crop_ratio=0.5)
         elif dataset_name == "cocostuff27" and crop_type is None:
-            self.n_classes = 27
             dataset_class = Coco
             extra_args = dict(coarse_labels=False, subset=None, exclude_things=False)
             if image_set == "val":
                 extra_args["subset"] = 7
-        elif dataset_name == "coco81":
-            self.n_classes = 81
+        
+
+        # coco-81, coco-171, pascalvoc
+        elif dataset_name == "coco81" and crop_type is None:
             dataset_class = Coco81
             extra_args = dict(coarse_labels=False, subset=None, exclude_things=False)
-            if image_set == "val":
-                extra_args["subset"] = 7
-        elif dataset_name == "coco171":
-            self.n_classes = 171
+        elif dataset_name == "coco171" and crop_type is None:
             dataset_class = Coco171
             extra_args = dict(coarse_labels=False, subset=None, exclude_things=False)
-            if image_set == "val":
-                extra_args["subset"] = 7
-        elif dataset_name == "pascalvoc":
-            self.n_classes = 21
+        elif dataset_name == "pascalvoc" and crop_type is None:
             dataset_class = PascalVOC.PascalVOCGenerator
             extra_args = dict()
+        elif dataset_name == "coco81" and crop_type is not None:
+            dataset_class = CroppedDataset
+            extra_args = dict(dataset_name="coco81", crop_type=crop_type, crop_ratio=0.5)
+        elif dataset_name == "coco171" and crop_type is not None:
+            dataset_class = CroppedDataset
+            extra_args = dict(dataset_name="coco171", crop_type=crop_type, crop_ratio=0.5)
+        elif dataset_name == "pascalvoc" and crop_type is not None:
+            dataset_class = CroppedDataset
+            extra_args = dict(dataset_name="pascalvoc", crop_type=crop_type, crop_ratio=0.5)
+
         else:
             raise ValueError("Unknown dataset: {}".format(dataset_name))
 
@@ -712,6 +711,7 @@ class ContrastiveSegDataset(Dataset):
         self._set_seed(seed)
         if self.extra_transform is not None:
             extra_trans = self.extra_transform
+            self.normalize = lambda x: x
         else:
             extra_trans = lambda i, x: x
 

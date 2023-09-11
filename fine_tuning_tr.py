@@ -49,9 +49,6 @@ def train(args, net, segment, cluster, train_loader, optimizer_segment, optimize
             img = batch["img"].cuda()
             label = batch["label"].cuda()
 
-            a = invTrans(img)[1].permute(1,2,0)
-            b = cmap[label[1].cpu()][0]
-
             # intermediate features
             feat = net(img)[:, 1:, :]
             seg_feat_ema = segment.head_ema(feat, segment.dropout)
@@ -74,6 +71,9 @@ def train(args, net, segment, cluster, train_loader, optimizer_segment, optimize
         optimizer_segment.zero_grad()
         optimizer_cluster.zero_grad()
         scaler.scale(loss).backward()
+        if args.dataset=='cityscapes':
+            scaler.unscale_(optimizer_segment)
+            torch.nn.utils.clip_grad_norm_(segment.parameters(), 1)
         scaler.step(optimizer_segment)
         scaler.step(optimizer_cluster)
         scaler.update()
@@ -191,8 +191,12 @@ def main(rank, args, ngpus_per_node):
     if args.distributed: net = net.module; segment = segment.module; cluster = cluster.module
 
     # optimizer
-    optimizer_segment = torch.optim.Adam(segment.parameters(), lr=1e-3 * ngpus_per_node, weight_decay=1e-4)
-    optimizer_cluster = torch.optim.Adam(cluster.parameters(), lr=1e-3 * ngpus_per_node)
+    if args.dataset=='cityscapes':
+        optimizer_segment = torch.optim.Adam(segment.parameters(), lr=1e-3 * ngpus_per_node)
+        optimizer_cluster = torch.optim.Adam(cluster.parameters(), lr=1e-3 * ngpus_per_node)
+    else:
+        optimizer_segment = torch.optim.Adam(segment.parameters(), lr=1e-4 * ngpus_per_node)
+        optimizer_cluster = torch.optim.Adam(cluster.parameters(), lr=1e-3 * ngpus_per_node)
     
     # scheduler
     scheduler_segment = torch.optim.lr_scheduler.StepLR(optimizer_segment, step_size=2, gamma=0.5)
@@ -285,8 +289,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     # model parameter
     parser.add_argument('--data_dir', default='/mnt/hard2/lbk-iccv/datasets/', type=str)
-    parser.add_argument('--dataset', default='pascalvoc', type=str)
-    parser.add_argument('--ckpt', default='checkpoint/dino_vit_base_8.pth', type=str)
+    parser.add_argument('--dataset', default='coco171', type=str)
+    parser.add_argument('--ckpt', default='checkpoint/dino_vit_small_8.pth', type=str)
     parser.add_argument('--epoch', default=5, type=int)
     parser.add_argument('--distributed', default=True, type=str2bool)
     parser.add_argument('--load_segment', default=False, type=str2bool)
@@ -297,7 +301,7 @@ if __name__ == "__main__":
     parser.add_argument('--num_workers', default=int(os.cpu_count() / 8), type=int)
 
     # DDP
-    parser.add_argument('--gpu', default='0,1,2,3', type=str)
+    parser.add_argument('--gpu', default='4,5,6,7', type=str)
     parser.add_argument('--port', default='12355', type=str)
     
     # codebook parameter

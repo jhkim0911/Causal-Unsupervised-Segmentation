@@ -217,27 +217,6 @@ def main(rank, args):
     # param size
     print(f'# of Parameters: {num_param(segment)/10**6:.2f}(M)') 
 
-    ###################################################################################
-    # First, run train_mediator.py
-    path, is_exist = pickle_path_and_exist(args)
-
-    # early save for time
-    if is_exist:
-        # load
-        codebook = np.load(path)
-        cb = torch.from_numpy(codebook).cuda()
-        cluster.codebook.data = cb
-        cluster.codebook.requires_grad = False
-
-        # print successful loading modularity
-        rprint(f'Modularity {path} loaded', rank)
-
-    else:
-        rprint('Train Modularity-based Codebook First', rank)
-        return
-    ###################################################################################
-
-
 
     # post-processing with crf and hungarian matching
     test_without_crf(

@@ -5,7 +5,7 @@ from utils.utils import *
 import torch.distributed as dist
 import torch.multiprocessing as mp
 import torch.backends.cudnn as cudnn
-from modules.segment_module import transform, untransform, quantize_index, compute_modularity_based_codebook
+from modules.segment_module import compute_modularity_based_codebook
 from loader.dataloader import dataloader
 from torch.cuda.amp import autocast, GradScaler
 from loader.netloader import network_loader, cluster_mlp_loader
@@ -50,41 +50,20 @@ def train(args, net, cluster, train_loader, optimizer):
         # Interrupt for sync GPU Process
         if args.distributed: dist.barrier()
 
-@Wrapper.TestPrint
-def test(args, net, cluster, nice, test_loader):
-    prog_bar = tqdm(enumerate(test_loader), total=len(test_loader), leave=True)
-    for idx, batch in prog_bar:
-        # image and label and self supervised feature
-        img = batch["img"].cuda()
-        label = batch["label"].cuda()
-
-        # intermediate feature
-        with autocast():
-            feat = net(img)[:, 1:, :]
-
-            # interp feat
-            interp_dec_feat = F.interpolate(transform(feat), label.shape[-2:], mode='bilinear', align_corners=False)
-
-            # cluster preds
-            cluster_preds = quantize_index(untransform(interp_dec_feat), cluster.codebook)
-
-        # nice evaluation
-        _, desc_nice = nice.eval(cluster_preds, label)
-
-        # real-time print
-        desc = f'[TEST] {desc_nice}'
-        prog_bar.set_description(desc, refresh=True)
-
-    nice.reset()
-
-    # Interrupt for sync GPU Process
-    if args.distributed: dist.barrier()
-
 def pickle_path_and_exist(args):
     from os.path import exists
-    baseline = args.ckpt.split('/')[-1].split('.')[0]
-    check_dir(f'CUSS/{args.dataset}/modularity/{baseline}/{args.num_codebook}')
-    filepath = f'CUSS/{args.dataset}/modularity/{baseline}/{args.num_codebook}/modular.npy'
+    if args.dataset=='coco81':
+        baseline = args.ckpt.split('/')[-1].split('.')[0]
+        check_dir(f'CUSS/cocostuff27/modularity/{baseline}/{args.num_codebook}')
+        filepath = f'CUSS/cocostuff27/modularity/{baseline}/{args.num_codebook}/modular.npy'
+    elif args.dataset=='coco171':
+        baseline = args.ckpt.split('/')[-1].split('.')[0]
+        check_dir(f'CUSS/cocostuff27/modularity/{baseline}/{args.num_codebook}')
+        filepath = f'CUSS/cocostuff27/modularity/{baseline}/{args.num_codebook}/modular.npy'
+    else:
+        baseline = args.ckpt.split('/')[-1].split('.')[0]
+        check_dir(f'CUSS/{args.dataset}/modularity/{baseline}/{args.num_codebook}')
+        filepath = f'CUSS/{args.dataset}/modularity/{baseline}/{args.num_codebook}/modular.npy'
     return filepath, exists(filepath)
 
 def main(rank, args, ngpus_per_node):
@@ -98,7 +77,7 @@ def main(rank, args, ngpus_per_node):
     print_argparse(args, rank)
 
     # dataset loader
-    train_loader, test_loader, sampler = dataloader(args)
+    train_loader, _, sampler = dataloader(args)
 
     # network loader
     net = network_loader(args, rank)
@@ -110,9 +89,6 @@ def main(rank, args, ngpus_per_node):
     # optimizer and scheduler
     optimizer = torch.optim.Adam(cluster.parameters(), lr=1e-3 * ngpus_per_node)
     scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.2)
-
-    # evaluation
-    nice = NiceTool(args.n_classes)
 
     ###################################################################################
     # train only modularity?

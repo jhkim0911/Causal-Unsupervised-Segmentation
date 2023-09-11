@@ -5,10 +5,10 @@ from utils.utils import *
 from modules.segment_module import transform, untransform
 from loader.dataloader import dataloader
 from torch.cuda.amp import autocast
-from loader.netloader import network_loader, segment_tr_loader, cluster_tr_loader
+from loader.netloader import network_loader, segment_mlp_loader, cluster_mlp_loader
 
 
-def test(args, net, segment, cluster, nice, test_loader, cmap):
+def test(args, net, segment, cluster, nice, manytoone, test_loader, cmap):
     segment.eval()
 
     prog_bar = tqdm(enumerate(test_loader), total=len(test_loader), leave=True)
@@ -36,14 +36,15 @@ def test(args, net, segment, cluster, nice, test_loader, cmap):
             # crf
             crf_preds = do_crf(pool, img, cluster_preds).argmax(1).cuda()
 
-            # nice evaluation
-            _, desc_nice = nice.eval(crf_preds, label)
+            # many to one matching
+            manytoone.eval(crf_preds, label)
+            mathcing_crf_preds = manytoone.do_hungarian(crf_preds)
 
-            # hungarian
-            hungarian_preds = nice.do_hungarian(crf_preds)
+            # nice evaluation
+            _, desc_nice = nice.eval(mathcing_crf_preds, label)
 
             # save images
-            save_all(args, ind, img, label, cluster_preds.argmax(dim=1), crf_preds, hungarian_preds, cmap, is_tr=True)
+            save_all(args, ind, img, label, cluster_preds.argmax(dim=1), crf_preds, mathcing_crf_preds, cmap, is_tr=True)
 
             # real-time print
             desc = f'{desc_nice}'
@@ -54,7 +55,7 @@ def test(args, net, segment, cluster, nice, test_loader, cmap):
 
 
 
-def test_without_crf(args, net, segment, cluster, nice, test_loader):
+def test_without_crf(args, net, segment, cluster, nice, manytoone, test_loader):
     segment.eval()
 
     total_acc = 0
@@ -83,8 +84,12 @@ def test_without_crf(args, net, segment, cluster, nice, test_loader):
             # cluster
             cluster_preds = cluster.forward_centroid(untransform(interp_seg_feat), inference=True)
 
+            # many to one matching
+            manytoone.eval(cluster_preds, label)
+            mathcing_cluster_preds = manytoone.do_hungarian(cluster_preds)
+
             # nice evaluation
-            _, desc_nice = nice.eval(cluster_preds, label)
+            _, desc_nice = nice.eval(mathcing_cluster_preds, label)
 
         # linear probe acc check
         pred_label = linear_logits.argmax(dim=1)
@@ -214,37 +219,17 @@ def main(rank, args):
 
     # network loader
     net = network_loader(args, rank)
-    segment = segment_tr_loader(args, rank)
-    cluster = cluster_tr_loader(args, rank)
-
+    segment = segment_mlp_loader(args, rank)
+    args.n_classes *= args.x_times 
+    cluster = cluster_mlp_loader(args, rank)
+    args.n_classes /= args.x_times
+    
     # evaluation
+    manytoone = ManyToOneMatching(args.n_classes, x_times=args.x_times)
     nice = NiceTool(args.n_classes)
 
     # color map
     cmap = create_cityscapes_colormap() if args.dataset == 'cityscapes' else create_pascal_label_colormap()
-
-
-    ###################################################################################
-    # First, run train_mediator.py
-    path, is_exist = pickle_path_and_exist(args)
-
-    # early save for time
-    if is_exist:
-        # load
-        codebook = np.load(path)
-        cb = torch.from_numpy(codebook).cuda()
-        cluster.codebook.data = cb
-        cluster.codebook.requires_grad = False
-        segment.head.codebook = cb
-        segment.head_ema.codebook = cb
-
-        # print successful loading modularity
-        rprint(f'Modularity {path} loaded', rank)
-
-    else:
-        rprint('Train Modularity-based Codebook First', rank)
-        return
-    ###################################################################################
 
     # param size
     print(f'# of Parameters: {num_param(segment)/10**6:.2f}(M)') 
@@ -256,6 +241,7 @@ def main(rank, args):
         segment,
         cluster,
         nice,
+        manytoone,
         test_loader)
 
     # post-processing with crf and hungarian matching
@@ -265,6 +251,7 @@ def main(rank, args):
         segment,
         cluster,
         nice,
+        manytoone,
         test_loader,
         cmap)
     
@@ -307,6 +294,7 @@ if __name__ == "__main__":
     # model parameter
     parser.add_argument('--reduced_dim', default=90, type=int)
     parser.add_argument('--projection_dim', default=2048, type=int)
+    parser.add_argument('x_times', default=10, type=int)
 
     args = parser.parse_args()
 
@@ -327,5 +315,3 @@ if __name__ == "__main__":
 
     # first gpu index is activated once there are several gpu in args.gpu
     main(rank=gpu_list[0], args=args)
-
-# %%
