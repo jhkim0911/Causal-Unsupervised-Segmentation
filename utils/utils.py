@@ -53,19 +53,9 @@ class Wrapper(object):
 
 def pickle_path_and_exist(args):
     from os.path import exists
-
-    if args.dataset=='coco81':
-        baseline = args.ckpt.split('/')[-1].split('.')[0]
-        check_dir(f'CUSS/cocostuff27/modularity/{baseline}/{args.num_codebook}')
-        filepath = f'CUSS/cocostuff27/modularity/{baseline}/{args.num_codebook}/modular.npy'
-    elif args.dataset=='coco171':
-        baseline = args.ckpt.split('/')[-1].split('.')[0]
-        check_dir(f'CUSS/cocostuff27/modularity/{baseline}/{args.num_codebook}')
-        filepath = f'CUSS/cocostuff27/modularity/{baseline}/{args.num_codebook}/modular.npy'
-    else:
-        baseline = args.ckpt.split('/')[-1].split('.')[0]
-        check_dir(f'CUSS/{args.dataset}/modularity/{baseline}/{args.num_codebook}')
-        filepath = f'CUSS/{args.dataset}/modularity/{baseline}/{args.num_codebook}/modular.npy'
+    baseline = args.ckpt.split('/')[-1].split('.')[0]
+    check_dir(f'CUSS/{args.dataset}/modularity/{baseline}/{args.num_codebook}')
+    filepath = f'CUSS/{args.dataset}/modularity/{baseline}/{args.num_codebook}/modular.npy'
     return filepath, exists(filepath)
 
 def freeze(net):
@@ -378,22 +368,22 @@ class ToTargetTensor(object):
 
 from torchvision.transforms import InterpolationMode
 # DATA Transformation
-def get_transform(res, is_label, crop_type):
-    if crop_type == "center":
-        cropper = transforms.CenterCrop(res)
-    elif crop_type == "random":
-        cropper = transforms.RandomCrop(res)
-    elif crop_type is None:
-        cropper = transforms.Lambda(lambda x: x)
-        res = (res, res)
-    else:
-        raise ValueError("Unknown Cropper {}".format(crop_type))
+def get_cococity_transform(res, is_label):
+
     if is_label:
         return transforms.Compose([transforms.Resize(res, interpolation=InterpolationMode.NEAREST),
-                          cropper,
+                          transforms.CenterCrop(res),
                           ToTargetTensor()])
     else:
         return transforms.Compose([transforms.Resize(res, interpolation=InterpolationMode.NEAREST),
-                          cropper,
+                          transforms.CenterCrop(res),
                           transforms.ToTensor()])
 
+# DATA Transformation
+def get_pascal_transform(res, is_label):
+    if is_label:
+        return transforms.Compose([transforms.Resize((res, res), interpolation=InterpolationMode.NEAREST),
+                          ToTargetTensor()])
+    else:
+        return transforms.Compose([transforms.Resize((res, res), interpolation=InterpolationMode.NEAREST),
+                          transforms.ToTensor()])

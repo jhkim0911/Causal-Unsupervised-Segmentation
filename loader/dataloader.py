@@ -18,14 +18,20 @@ def dataloader(args, no_ddp_train_shuffle=True):
 
     if args.dataset == "cocostuff27":
         args.n_classes = 27
+        get_transform = get_cococity_transform
     elif args.dataset == "cityscapes":
         args.n_classes = 27
+        get_transform = get_cococity_transform
     elif args.dataset == "pascalvoc":
         args.n_classes = 21
+        get_transform = get_pascal_transform
     elif args.dataset == "coco81":
         args.n_classes = 81
+        get_transform = get_cococity_transform
     elif args.dataset == "coco171":
         args.n_classes = 171
+        get_transform = get_cococity_transform
+
 
     # train dataset
     train_dataset = ContrastiveSegDataset(
@@ -33,8 +39,8 @@ def dataloader(args, no_ddp_train_shuffle=True):
         dataset_name=args.dataset,
         crop_type="five",
         image_set="train",
-        transform=get_transform(args.train_resolution, False, "center"),
-        target_transform=get_transform(args.train_resolution, True, "center"),
+        transform=get_transform(args.train_resolution, False),
+        target_transform=get_transform(args.train_resolution, True),
     )
 
     if args.distributed: train_sampler = DistributedSampler(train_dataset, shuffle=True)
@@ -49,8 +55,8 @@ def dataloader(args, no_ddp_train_shuffle=True):
         dataset_name=args.dataset,
         crop_type=None,
         image_set="val",
-        transform=get_transform(args.test_resolution, False, "center"),
-        target_transform=get_transform(args.test_resolution, True, "center"),
+        transform=get_transform(args.test_resolution, False),
+        target_transform=get_transform(args.test_resolution, True),
     )
 
     if args.distributed: test_sampler = DistributedSampler(test_dataset, shuffle=False)
@@ -610,7 +616,7 @@ class PascalVOC(VOCSegmentation):
             seed = random.randint(0, 2 ** 32)
             self._set_seed(seed); image = self.transforms(image)
             self._set_seed(seed); label = self.target_transforms(label)
-            label[label > 20] = 0
+            label[label > 20] = -1
         return image, label.squeeze(0)
     
     def _set_seed(self, seed):
@@ -634,8 +640,6 @@ class ContrastiveSegDataset(Dataset):
                  image_set,
                  transform,
                  target_transform,
-                 aug_geometric_transform=None,
-                 aug_photometric_transform=None,
                  extra_transform=None,
                  ):
         super(ContrastiveSegDataset).__init__()
@@ -687,9 +691,6 @@ class ContrastiveSegDataset(Dataset):
             extra_args = dict(dataset_name="pascalvoc", crop_type='super', crop_ratio=0)
         else:
             raise ValueError("Unknown dataset: {}".format(dataset_name))
-
-        self.aug_geometric_transform = aug_geometric_transform
-        self.aug_photometric_transform = aug_photometric_transform
 
         self.dataset = dataset_class(
             root=pytorch_data_dir,

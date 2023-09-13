@@ -6,7 +6,7 @@ from os.path import join
 from utils.utils import *
 from torch.utils.data import DataLoader
 from loader.dataloader import ContrastiveSegDataset
-from torchvision.transforms.functional import five_crop, ten_crop, crop
+from torchvision.transforms.functional import five_crop, ten_crop
 from tqdm import tqdm
 from torch.utils.data import Dataset
 from torchvision import transforms as T
@@ -30,15 +30,13 @@ class RandomCropComputer(Dataset):
             crop_func = lambda x: five_crop(x, self._get_size(x, crop_ratio))
         elif crop_type == 'super':
             crop_ratio = 0
-            crop_func = lambda x: five_crop(x, self._get_size(x, 0.1))\
-                                + five_crop(x, self._get_size(x, 0.2))\
-                                + five_crop(x, self._get_size(x, 0.3))\
-                                + five_crop(x, self._get_size(x, 0.4))\
-                                + five_crop(x, self._get_size(x, 0.5))\
-                                + five_crop(x, self._get_size(x, 0.6))\
-                                + five_crop(x, self._get_size(x, 0.7))\
-                                + five_crop(x, self._get_size(x, 0.8))\
-                                + five_crop(x, self._get_size(x, 0.9))
+            crop_func = lambda x: ten_crop(x, self._get_size(x, 0.3))\
+                                + ten_crop(x, self._get_size(x, 0.4))\
+                                + ten_crop(x, self._get_size(x, 0.5))\
+                                + ten_crop(x, self._get_size(x, 0.6))\
+                                + ten_crop(x, self._get_size(x, 0.7))
+
+                                
 
 
         if args.dataset=='coco171':

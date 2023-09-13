@@ -2,6 +2,14 @@
 ######################################
 # [OPTION] DATASET
 
+# cocostuff27
+# dataset="stuff"
+# reduced_dim=90
+
+# cityscapes
+# dataset="city"
+# reduced_dim=90
+
 # coco-81
 # dataset="coco81"
 # reduced_dim=384
@@ -17,17 +25,17 @@ reduced_dim=90
 
 ######################################
 # [OPTION] STRUCTURE
-# structure="MLP"
-structure="TR"
+structure="MLP"
+# structure="TR"
 ######################################
 
 ######################################
 # [OPTION] Self-Supervised Method
 
 # DINO
-ckpt="checkpoint/dino_vit_small_8.pth"
+# ckpt="checkpoint/dino_vit_small_8.pth"
 # ckpt="checkpoint/dino_vit_small_16.pth"
-# ckpt="checkpoint/dino_vit_base_8.pth"
+ckpt="checkpoint/dino_vit_base_8.pth"
 # ckpt="checkpoint/dino_vit_base_16.pth"
 
 # DINOv2

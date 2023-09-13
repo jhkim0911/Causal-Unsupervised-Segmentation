@@ -78,8 +78,7 @@ def train(args, net, segment, cluster, train_loader, optimizer_segment, optimize
             scaler.unscale_(optimizer_segment)
             torch.nn.utils.clip_grad_norm_(segment.parameters(), 2)
         elif args.dataset=='pascalvoc':
-            scaler.unscale_(optimizer_segment)
-            torch.nn.utils.clip_grad_norm_(segment.parameters(), 1)
+            pass
         elif args.dataset=='coco81':
             scaler.unscale_(optimizer_segment)
             torch.nn.utils.clip_grad_norm_(segment.parameters(), 2)
@@ -204,7 +203,7 @@ def main(rank, args, ngpus_per_node):
         optimizer_segment = torch.optim.Adam(segment.parameters(), lr=1e-3 * ngpus_per_node, weight_decay=1e-4)
         optimizer_cluster = torch.optim.Adam(cluster.parameters(), lr=1e-3 * ngpus_per_node)
     elif args.dataset=='pascalvoc':
-        optimizer_segment = torch.optim.Adam(segment.parameters(), lr=1e-3 * ngpus_per_node)
+        optimizer_segment = torch.optim.Adam(segment.parameters(), lr=1e-3 * ngpus_per_node, weight_decay=1e-4)
         optimizer_cluster = torch.optim.Adam(cluster.parameters(), lr=1e-3 * ngpus_per_node)
     else:
         raise NotImplementedError
