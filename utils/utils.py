@@ -51,6 +51,23 @@ class Wrapper(object):
             return out
         return wrapper
 
+def pickle_path_and_exist(args):
+    from os.path import exists
+
+    if args.dataset=='coco81':
+        baseline = args.ckpt.split('/')[-1].split('.')[0]
+        check_dir(f'CUSS/cocostuff27/modularity/{baseline}/{args.num_codebook}')
+        filepath = f'CUSS/cocostuff27/modularity/{baseline}/{args.num_codebook}/modular.npy'
+    elif args.dataset=='coco171':
+        baseline = args.ckpt.split('/')[-1].split('.')[0]
+        check_dir(f'CUSS/cocostuff27/modularity/{baseline}/{args.num_codebook}')
+        filepath = f'CUSS/cocostuff27/modularity/{baseline}/{args.num_codebook}/modular.npy'
+    else:
+        baseline = args.ckpt.split('/')[-1].split('.')[0]
+        check_dir(f'CUSS/{args.dataset}/modularity/{baseline}/{args.num_codebook}')
+        filepath = f'CUSS/{args.dataset}/modularity/{baseline}/{args.num_codebook}/modular.npy'
+    return filepath, exists(filepath)
+
 def freeze(net):
     # net eval and freeze
     net.eval()
@@ -210,7 +227,7 @@ class NiceTool(object):
         self.metric_by_class = OrderedDict({"mIoU": iou * 100,
                        # "Precision per Class (%)": prc * 100,
                        "mAP": prc * 100,
-                       "Acc": (tp / hist.sum(dim=1)) * 100})
+                       "Acc": (torch.diag(hist) / hist.sum(dim=1)) * 100})
 
 
         # generate desc

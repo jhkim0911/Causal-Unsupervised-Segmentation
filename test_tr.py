@@ -65,6 +65,10 @@ def test_without_crf(args, net, segment, cluster, nice, test_loader):
         img = batch["img"].cuda()
         label = batch["label"].cuda()
 
+        cmap = create_pascal_label_colormap()
+        a = invTrans(img)[0].permute(1,2,0)
+        b = cmap[label[0].cpu()]
+
         # intermediate feature
         with autocast():
 
@@ -183,24 +187,6 @@ def test_linear(args, net, segment, nice, test_loader):
     nice.reset()
 
 
-def pickle_path_and_exist(args):
-    from os.path import exists
-
-    if args.dataset=='coco81':
-        baseline = args.ckpt.split('/')[-1].split('.')[0]
-        check_dir(f'CUSS/cocostuff27/modularity/{baseline}/{args.num_codebook}')
-        filepath = f'CUSS/cocostuff27/modularity/{baseline}/{args.num_codebook}/modular.npy'
-    elif args.dataset=='coco171':
-        baseline = args.ckpt.split('/')[-1].split('.')[0]
-        check_dir(f'CUSS/cocostuff27/modularity/{baseline}/{args.num_codebook}')
-        filepath = f'CUSS/cocostuff27/modularity/{baseline}/{args.num_codebook}/modular.npy'
-    else:
-        baseline = args.ckpt.split('/')[-1].split('.')[0]
-        check_dir(f'CUSS/{args.dataset}/modularity/{baseline}/{args.num_codebook}')
-        filepath = f'CUSS/{args.dataset}/modularity/{baseline}/{args.num_codebook}/modular.npy'
-    return filepath, exists(filepath)
-
-
 def main(rank, args):
 
     # setting gpu id of this process
@@ -210,7 +196,7 @@ def main(rank, args):
     print_argparse(args, rank=0)
 
     # dataset loader
-    _, test_loader, _ = dataloader(args, False)
+    train_loader, test_loader, _ = dataloader(args, False)
 
     # network loader
     net = network_loader(args, rank)
@@ -290,10 +276,11 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     
     # model parameter
+    parser.add_argument('--NAME-TAG', default='CUSS-TR', type=str)
     parser.add_argument('--data_dir', default='/mnt/hard2/lbk-iccv/datasets', type=str)
-    parser.add_argument('--dataset', default='cocostuff27', type=str)
+    parser.add_argument('--dataset', default='pascalvoc', type=str)
     parser.add_argument('--port', default='12355', type=str)
-    parser.add_argument('--ckpt', default='checkpoint/dino_vit_small_16.pth', type=str)
+    parser.add_argument('--ckpt', default='checkpoint/dino_vit_small_8.pth', type=str)
     parser.add_argument('--distributed', default=False, type=str2bool)
     parser.add_argument('--load_segment', default=True, type=str2bool)
     parser.add_argument('--load_cluster', default=True, type=str2bool)

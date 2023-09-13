@@ -184,14 +184,6 @@ def test_linear(args, net, segment, nice, test_loader):
     nice.reset()
 
 
-def pickle_path_and_exist(args):
-    from os.path import exists
-    baseline = args.ckpt.split('/')[-1].split('.')[0]
-    check_dir(f'CUSS/{args.dataset}/modularity/{baseline}/{args.num_codebook}')
-    filepath = f'CUSS/{args.dataset}/modularity/{baseline}/{args.num_codebook}/modular.npy'
-    return filepath, exists(filepath)
-
-
 def main(rank, args):
 
     # setting gpu id of this process
@@ -201,7 +193,7 @@ def main(rank, args):
     print_argparse(args, rank=0)
 
     # dataset loader
-    _, test_loader, sampler = dataloader(args, False)
+    _, test_loader, _ = dataloader(args, False)
 
     # network loader
     net = network_loader(args, rank)
@@ -258,6 +250,7 @@ if __name__ == "__main__":
     # fetch args
     parser = argparse.ArgumentParser()
     # model parameter
+    parser.add_argument('--NAME-TAG', default='CUSS-MLP', type=str)
     parser.add_argument('--data_dir', default='/mnt/hard2/lbk-iccv/datasets', type=str)
     parser.add_argument('--dataset', default='cityscapes', type=str)
     parser.add_argument('--port', default='12355', type=str)

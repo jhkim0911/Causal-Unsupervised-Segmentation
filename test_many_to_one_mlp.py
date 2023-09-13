@@ -188,24 +188,6 @@ def test_linear(args, net, segment, nice, test_loader):
     nice.reset()
 
 
-def pickle_path_and_exist(args):
-    from os.path import exists
-
-    if args.dataset=='coco81':
-        baseline = args.ckpt.split('/')[-1].split('.')[0]
-        check_dir(f'CUSS/cocostuff27/modularity/{baseline}/{args.num_codebook}')
-        filepath = f'CUSS/cocostuff27/modularity/{baseline}/{args.num_codebook}/modular.npy'
-    elif args.dataset=='coco171':
-        baseline = args.ckpt.split('/')[-1].split('.')[0]
-        check_dir(f'CUSS/cocostuff27/modularity/{baseline}/{args.num_codebook}')
-        filepath = f'CUSS/cocostuff27/modularity/{baseline}/{args.num_codebook}/modular.npy'
-    else:
-        baseline = args.ckpt.split('/')[-1].split('.')[0]
-        check_dir(f'CUSS/{args.dataset}/modularity/{baseline}/{args.num_codebook}')
-        filepath = f'CUSS/{args.dataset}/modularity/{baseline}/{args.num_codebook}/modular.npy'
-    return filepath, exists(filepath)
-
-
 def main(rank, args):
 
     # setting gpu id of this process
@@ -277,6 +259,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     
     # model parameter
+    parser.add_argument('--NAME-TAG', default='CUSS-MLP', type=str)
     parser.add_argument('--data_dir', default='/mnt/hard2/lbk-iccv/datasets', type=str)
     parser.add_argument('--dataset', default='cocostuff27', type=str)
     parser.add_argument('--port', default='12355', type=str)

@@ -6,26 +6,40 @@ from os.path import join
 from utils.utils import *
 from torch.utils.data import DataLoader
 from loader.dataloader import ContrastiveSegDataset
-from torchvision.transforms.functional import five_crop
+from torchvision.transforms.functional import five_crop, ten_crop, crop
 from tqdm import tqdm
 from torch.utils.data import Dataset
+from torchvision import transforms as T
 
 class RandomCropComputer(Dataset):
 
-    def _get_size(self, img):
+    @staticmethod
+    def _get_size(img, crop_ratio):
         if len(img.shape) == 3:
-            return [int(img.shape[1] * self.crop_ratio), int(img.shape[2] * self.crop_ratio)]
+            return [int(img.shape[1] * crop_ratio), int(img.shape[2] * crop_ratio)]
         elif len(img.shape) == 2:
-            return [int(img.shape[0] * self.crop_ratio), int(img.shape[1] * self.crop_ratio)]
+            return [int(img.shape[0] * crop_ratio), int(img.shape[1] * crop_ratio)]
         else:
             raise ValueError("Bad image shape {}".format(img.shape))
-
-    def five_crops(self, i, img):
-        return five_crop(img, self._get_size(img))
 
     def __init__(self, args, dataset_name, img_set, crop_type, crop_ratio):
         self.pytorch_data_dir = args.data_dir
         self.crop_ratio = crop_ratio
+
+        if crop_type == 'five':
+            crop_func = lambda x: five_crop(x, self._get_size(x, crop_ratio))
+        elif crop_type == 'super':
+            crop_ratio = 0
+            crop_func = lambda x: five_crop(x, self._get_size(x, 0.1))\
+                                + five_crop(x, self._get_size(x, 0.2))\
+                                + five_crop(x, self._get_size(x, 0.3))\
+                                + five_crop(x, self._get_size(x, 0.4))\
+                                + five_crop(x, self._get_size(x, 0.5))\
+                                + five_crop(x, self._get_size(x, 0.6))\
+                                + five_crop(x, self._get_size(x, 0.7))\
+                                + five_crop(x, self._get_size(x, 0.8))\
+                                + five_crop(x, self._get_size(x, 0.9))
+
 
         if args.dataset=='coco171':
             self.save_dir = join(
@@ -49,24 +63,13 @@ class RandomCropComputer(Dataset):
             dataset_name=args.dataset,
             crop_type=None,
             image_set=img_set,
-            transform=get_transform(args.train_resolution, False, "center"),
-            target_transform=get_transform(args.train_resolution, True, "center"),
-            num_neighbors=7,
-            extra_transform=lambda i, x: self.five_crops(i, x)
+            transform=T.ToTensor(),
+            target_transform=ToTargetTensor(),
+            extra_transform=crop_func
         )
-
-
+        
     def __getitem__(self, item):
-        batch = self.dataset[item]
-        imgs = batch['img']
-        labels = batch['label']
-        for crop_num, (img, label) in enumerate(zip(imgs, labels)):
-            img_num = item * 5 + crop_num
-            img_arr = img.mul(255).add_(0.5).clamp_(0, 255).permute(1, 2, 0).to('cpu', torch.uint8).numpy()
-            label_arr = (label + 1).unsqueeze(0).permute(1, 2, 0).to('cpu', torch.uint8).numpy().squeeze(-1)
-            Image.fromarray(img_arr).save(join(self.img_dir, "{}.jpg".format(img_num)), 'JPEG')
-            Image.fromarray(label_arr).save(join(self.label_dir, "{}.png".format(img_num)), 'PNG')
-        return True
+        return self.dataset[item]
 
     def __len__(self):
         return len(self.dataset)
@@ -78,21 +81,29 @@ def my_app():
     parser = argparse.ArgumentParser()
 
     # fixed parameter
-    parser.add_argument('--train_resolution', default=320, type=int)
     parser.add_argument('--num_workers', default=int(os.cpu_count() / 8), type=int)
 
     # dataset and baseline
     parser.add_argument('--data_dir', default='/mnt/hard2/lbk-iccv/datasets', type=str)
-    parser.add_argument('--dataset', default='coco81', type=str)
+    parser.add_argument('--dataset', default='pascalvoc', type=str)
+    parser.add_argument('--distributed', default='false', type=str2bool)
+    parser.add_argument('--crop_type', default='super', type=str)
+    parser.add_argument('--crop_ratio', default=0.5, type=float)
 
     args = parser.parse_args()
-
-
-    for img_set in ["train", "val"]:
-        dataset = RandomCropComputer(args, args.dataset, img_set, "five", 0.5)
-        loader = DataLoader(dataset, 1, shuffle=False, num_workers=args.num_workers, collate_fn=lambda l: l)
-        for _ in tqdm(loader): pass
-
+    
+    counter = 0
+    dataset = RandomCropComputer(args, args.dataset, "train", args.crop_type, args.crop_ratio)
+    loader = DataLoader(dataset, 1, shuffle=False, num_workers=args.num_workers, collate_fn=lambda l: l)
+    for batch in tqdm(loader):
+        imgs = batch[0]['img']
+        labels = batch[0]['label']
+        for img, label in zip(imgs, labels):
+            img_arr = img.mul(255).add_(0.5).clamp_(0, 255).permute(1, 2, 0).to('cpu', torch.uint8).numpy()
+            label_arr = (label + 1).unsqueeze(0).permute(1, 2, 0).to('cpu', torch.uint8).numpy().squeeze(-1)
+            Image.fromarray(img_arr).save(join(dataset.img_dir, "{}.jpg".format(counter)), 'JPEG')
+            Image.fromarray(label_arr).save(join(dataset.label_dir, "{}.png".format(counter)), 'PNG')
+            counter+=1
 
 if __name__ == "__main__":
     my_app()

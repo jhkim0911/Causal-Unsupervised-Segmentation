@@ -1,14 +1,29 @@
 #!/bin/bash
-# dataset="pascalvoc"
-dataset="cityscapes"
-# dataset="cocostuff27"
+######################################
+# [OPTION] DATASET
+
+# coco-81
 # dataset="coco81"
+# reduced_dim=384
+
+# coco-171
 # dataset="coco171"
+# reduced_dim=384
 
-train_gpu="0,1,2,3"
-# train_gpu="4,5,6,7"
+# pascalvoc
+dataset="pascalvoc"
+reduced_dim=90
+######################################
 
-# Checkpoint Candidates
+######################################
+# [OPTION] STRUCTURE
+# structure="MLP"
+structure="TR"
+######################################
+
+######################################
+# [OPTION] Self-Supervised Method
+
 # DINO
 ckpt="checkpoint/dino_vit_small_8.pth"
 # ckpt="checkpoint/dino_vit_small_16.pth"
@@ -23,31 +38,63 @@ ckpt="checkpoint/dino_vit_small_8.pth"
 # ckpt="checkpoint/ibot_vit_small_16.pth"
 # ckpt="checkpoint/ibot_vit_base_16.pth"
 
-# msn
+# MSN
 # ckpt="checkpoint/msn_vit_small_16.pth"
 
 # MAE
 # ckpt="checkpoint/mae_vit_base_16.pth"
+######################################
+
+######################################
+# GPU and PORT
+if [ "$structure" = "MLP" ]
+then
+    train_gpu="0,1,2,3"
+elif [ "$structure" = "TR" ]
+then
+    train_gpu="4,5,6,7"
+fi
 
 # Non-Changeable Variable
 test_gpu="${train_gpu:0}"
 port=$(($RANDOM%800+1200))
+######################################
 
-# Mediator
+######################################
+# [STEP1] MEDIATOR
 python train_mediator.py --epoch 1 --dataset $dataset --ckpt $ckpt --gpu $train_gpu --port $port
+######################################
 
-# MLP
-# python train_front_door_mlp.py --dataset $dataset --ckpt $ckpt --gpu $train_gpu --port $port && python fine_tuning_mlp.py --dataset $dataset --epoch 1 --ckpt $ckpt --gpu $train_gpu --port $port && python test_mlp.py --dataset $dataset --ckpt $ckpt --gpu $test_gpu
-# python fine_tuning_mlp.py --dataset $dataset --epoch 1 --ckpt $ckpt --gpu $train_gpu --port $port && python test_mlp.py --dataset $dataset --ckpt $ckpt --gpu $test_gpu
+######################################
+# [STEP2] CUSS
+if [ "$structure" = "MLP" ]
+then 
+    python fine_tuning_mlp.py --dataset $dataset --epoch 1 --ckpt $ckpt --gpu $train_gpu --port $port --reduced_dim $reduced_dim
+elif [ "$structure" = "TR" ]
+then 
+    python fine_tuning_tr.py --epoch 5 --dataset $dataset --ckpt $ckpt --gpu $train_gpu --port $port --reduced_dim $reduced_dim
+fi
+######################################
 
-# TR
+######################################
+# TEST
+if [ "$structure" = "MLP" ]
+then 
+    python test_mlp.py --dataset $dataset --ckpt $ckpt --gpu $test_gpu --reduced_dim $reduced_dim
+elif [ "$structure" = "TR" ]
+then 
+    python test_tr.py --dataset $dataset --ckpt $ckpt --gpu $test_gpu --reduced_dim $reduced_dim
+fi
+######################################
+
+######################################
+# [OPTION] CUSS-MLP
+# python train_front_door_mlp.py --dataset $dataset --ckpt $ckpt --gpu $train_gpu --port $port --reduced_dim $reduced_dim && python fine_tuning_mlp.py --dataset $dataset --epoch 1 --ckpt $ckpt --gpu $train_gpu --port $port && python test_mlp.py --dataset $dataset --ckpt $ckpt --gpu $test_gpu --reduced_dim $reduced_dim
 # python train_front_door_tr.py --dataset $dataset --ckpt $ckpt --gpu $train_gpu --port $port && python fine_tuning_tr.py --epoch 5 --dataset $dataset --ckpt $ckpt --gpu $train_gpu --port $port && python test_tr.py --dataset $dataset --ckpt $ckpt --gpu $test_gpu
-python fine_tuning_tr.py --epoch 5 --dataset $dataset --ckpt $ckpt --gpu $train_gpu --port $port && python test_tr.py --dataset $dataset --ckpt $ckpt --gpu $test_gpu
+######################################
 
-# linear probing
-# python linear_probing_mlp.py --epoch 5 --dataset $dataset --ckpt $ckpt --gpu $train_gpu --port $port
-# python linear_probing_tr.py --epoch 5 --dataset $dataset --ckpt $ckpt --gpu $train_gpu --port $port
-
-# only test
-# python test_mlp.py --dataset $dataset --ckpt $ckpt --gpu $test_gpu
-# python test_tr.py --dataset $dataset --ckpt $ckpt --gpu $test_gpu
+######################################
+# [OPTION] LINEAR PROBING
+# python linear_probing_mlp.py --epoch 5 --dataset $dataset --ckpt $ckpt --gpu $train_gpu --port $port --reduced_dim $reduced_dim
+# python linear_probing_tr.py --epoch 5 --dataset $dataset --ckpt $ckpt --gpu $train_gpu --port $port --reduced_dim $reduced_dim
+######################################

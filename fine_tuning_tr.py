@@ -74,6 +74,21 @@ def train(args, net, segment, cluster, train_loader, optimizer_segment, optimize
         if args.dataset=='cityscapes':
             scaler.unscale_(optimizer_segment)
             torch.nn.utils.clip_grad_norm_(segment.parameters(), 1)
+        elif args.dataset=='cocostuff27':
+            scaler.unscale_(optimizer_segment)
+            torch.nn.utils.clip_grad_norm_(segment.parameters(), 2)
+        elif args.dataset=='pascalvoc':
+            scaler.unscale_(optimizer_segment)
+            torch.nn.utils.clip_grad_norm_(segment.parameters(), 1)
+        elif args.dataset=='coco81':
+            scaler.unscale_(optimizer_segment)
+            torch.nn.utils.clip_grad_norm_(segment.parameters(), 2)
+        elif args.dataset=='coco171':
+            # scaler.unscale_(optimizer_segment)
+            # torch.nn.utils.clip_grad_norm_(segment.parameters(), 2)
+            pass
+        else:
+            raise NotImplementedError
         scaler.step(optimizer_segment)
         scaler.step(optimizer_cluster)
         scaler.update()
@@ -150,22 +165,7 @@ def test(args, net, segment, cluster, nice, test_loader):
     if args.distributed: dist.barrier()
 
 
-def pickle_path_and_exist(args):
-    from os.path import exists
 
-    if args.dataset=='coco81':
-        baseline = args.ckpt.split('/')[-1].split('.')[0]
-        check_dir(f'CUSS/cocostuff27/modularity/{baseline}/{args.num_codebook}')
-        filepath = f'CUSS/cocostuff27/modularity/{baseline}/{args.num_codebook}/modular.npy'
-    elif args.dataset=='coco171':
-        baseline = args.ckpt.split('/')[-1].split('.')[0]
-        check_dir(f'CUSS/cocostuff27/modularity/{baseline}/{args.num_codebook}')
-        filepath = f'CUSS/cocostuff27/modularity/{baseline}/{args.num_codebook}/modular.npy'
-    else:
-        baseline = args.ckpt.split('/')[-1].split('.')[0]
-        check_dir(f'CUSS/{args.dataset}/modularity/{baseline}/{args.num_codebook}')
-        filepath = f'CUSS/{args.dataset}/modularity/{baseline}/{args.num_codebook}/modular.npy'
-    return filepath, exists(filepath)
 
 
 def main(rank, args, ngpus_per_node):
@@ -194,9 +194,20 @@ def main(rank, args, ngpus_per_node):
     if args.dataset=='cityscapes':
         optimizer_segment = torch.optim.Adam(segment.parameters(), lr=1e-3 * ngpus_per_node)
         optimizer_cluster = torch.optim.Adam(cluster.parameters(), lr=1e-3 * ngpus_per_node)
-    else:
-        optimizer_segment = torch.optim.Adam(segment.parameters(), lr=1e-4 * ngpus_per_node)
+    elif args.dataset=='cocostuff27':
+        optimizer_segment = torch.optim.Adam(segment.parameters(), lr=1e-3 * ngpus_per_node, weight_decay=1e-4)
         optimizer_cluster = torch.optim.Adam(cluster.parameters(), lr=1e-3 * ngpus_per_node)
+    elif args.dataset=='coco81':
+        optimizer_segment = torch.optim.Adam(segment.parameters(), lr=1e-3 * ngpus_per_node, weight_decay=1e-4)
+        optimizer_cluster = torch.optim.Adam(cluster.parameters(), lr=1e-3 * ngpus_per_node)
+    elif args.dataset=='coco171':
+        optimizer_segment = torch.optim.Adam(segment.parameters(), lr=1e-3 * ngpus_per_node, weight_decay=1e-4)
+        optimizer_cluster = torch.optim.Adam(cluster.parameters(), lr=1e-3 * ngpus_per_node)
+    elif args.dataset=='pascalvoc':
+        optimizer_segment = torch.optim.Adam(segment.parameters(), lr=1e-3 * ngpus_per_node)
+        optimizer_cluster = torch.optim.Adam(cluster.parameters(), lr=1e-3 * ngpus_per_node)
+    else:
+        raise NotImplementedError
     
     # scheduler
     scheduler_segment = torch.optim.lr_scheduler.StepLR(optimizer_segment, step_size=2, gamma=0.5)
@@ -288,8 +299,9 @@ if __name__ == "__main__":
     # fetch args
     parser = argparse.ArgumentParser()
     # model parameter
+    parser.add_argument('--NAME-TAG', default='CUSS-TR', type=str)
     parser.add_argument('--data_dir', default='/mnt/hard2/lbk-iccv/datasets/', type=str)
-    parser.add_argument('--dataset', default='coco171', type=str)
+    parser.add_argument('--dataset', default='coco81', type=str)
     parser.add_argument('--ckpt', default='checkpoint/dino_vit_small_8.pth', type=str)
     parser.add_argument('--epoch', default=5, type=int)
     parser.add_argument('--distributed', default=True, type=str2bool)

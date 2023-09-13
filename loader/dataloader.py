@@ -35,7 +35,6 @@ def dataloader(args, no_ddp_train_shuffle=True):
         image_set="train",
         transform=get_transform(args.train_resolution, False, "center"),
         target_transform=get_transform(args.train_resolution, True, "center"),
-        num_neighbors=7,
     )
 
     if args.distributed: train_sampler = DistributedSampler(train_dataset, shuffle=True)
@@ -96,7 +95,7 @@ class Coco81(Dataset):
         self.image_files = []
         self.label_files = []
         for split_dir in split_dirs[self.split]:
-            with open(join(self.root, "curated", split_dir, self.image_list), "r") as f:
+            with open(join(self.root, "images", split_dir, self.image_list), "r") as f:
                 img_ids = [fn.rstrip() for fn in f.readlines()]
                 for img_id in img_ids:
                     self.image_files.append(join(self.root, "images", split_dir, img_id + ".jpg"))
@@ -611,7 +610,7 @@ class PascalVOC(VOCSegmentation):
             seed = random.randint(0, 2 ** 32)
             self._set_seed(seed); image = self.transforms(image)
             self._set_seed(seed); label = self.target_transforms(label)
-            label[label > 20] = -1
+            label[label > 20] = 0
         return image, label.squeeze(0)
     
     def _set_seed(self, seed):
@@ -637,11 +636,9 @@ class ContrastiveSegDataset(Dataset):
                  target_transform,
                  aug_geometric_transform=None,
                  aug_photometric_transform=None,
-                 num_neighbors=5,
                  extra_transform=None,
                  ):
         super(ContrastiveSegDataset).__init__()
-        self.num_neighbors = num_neighbors
         self.image_set = image_set
         self.dataset_name = dataset_name
         self.extra_transform = extra_transform
@@ -652,18 +649,20 @@ class ContrastiveSegDataset(Dataset):
         if  dataset_name == "cityscapes" and crop_type is None:
             dataset_class = CityscapesSeg
             extra_args = dict()
+        elif dataset_name == "cocostuff27" and crop_type is None:
+            dataset_class = Coco
+            extra_args = dict(coarse_labels=False, subset=None, exclude_things=False)
+            if image_set == "val":
+                extra_args["subset"] = 7
+
+        # cityscapes, cocostuff27 [Crop]
         elif dataset_name == "cityscapes" and crop_type is not None:
             dataset_class = CroppedDataset
             extra_args = dict(dataset_name="cityscapes", crop_type=crop_type, crop_ratio=0.5)
         elif dataset_name == "cocostuff27" and crop_type is not None:
             dataset_class = CroppedDataset
             extra_args = dict(dataset_name="cocostuff", crop_type="five", crop_ratio=0.5)
-        elif dataset_name == "cocostuff27" and crop_type is None:
-            dataset_class = Coco
-            extra_args = dict(coarse_labels=False, subset=None, exclude_things=False)
-            if image_set == "val":
-                extra_args["subset"] = 7
-        
+
 
         # coco-81, coco-171, pascalvoc
         elif dataset_name == "coco81" and crop_type is None:
@@ -675,6 +674,8 @@ class ContrastiveSegDataset(Dataset):
         elif dataset_name == "pascalvoc" and crop_type is None:
             dataset_class = PascalVOC.PascalVOCGenerator
             extra_args = dict()
+
+        # coco-81, coco-171, pascalvoc [Crop]
         elif dataset_name == "coco81" and crop_type is not None:
             dataset_class = CroppedDataset
             extra_args = dict(dataset_name="coco81", crop_type=crop_type, crop_ratio=0.5)
@@ -683,8 +684,7 @@ class ContrastiveSegDataset(Dataset):
             extra_args = dict(dataset_name="coco171", crop_type=crop_type, crop_ratio=0.5)
         elif dataset_name == "pascalvoc" and crop_type is not None:
             dataset_class = CroppedDataset
-            extra_args = dict(dataset_name="pascalvoc", crop_type=crop_type, crop_ratio=0.5)
-
+            extra_args = dict(dataset_name="pascalvoc", crop_type='super', crop_ratio=0)
         else:
             raise ValueError("Unknown dataset: {}".format(dataset_name))
 
@@ -713,12 +713,12 @@ class ContrastiveSegDataset(Dataset):
             extra_trans = self.extra_transform
             self.normalize = lambda x: x
         else:
-            extra_trans = lambda i, x: x
+            extra_trans = lambda x: x
 
         ret = {
             "ind": ind,
-            "img": self.normalize(extra_trans(ind, pack[0])),
-            "label": extra_trans(ind, pack[1]),
+            "img": self.normalize(extra_trans(pack[0])),
+            "label": extra_trans(pack[1]),
         }
 
         return ret

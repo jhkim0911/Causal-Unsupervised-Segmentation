@@ -50,22 +50,6 @@ def train(args, net, cluster, train_loader, optimizer):
         # Interrupt for sync GPU Process
         if args.distributed: dist.barrier()
 
-def pickle_path_and_exist(args):
-    from os.path import exists
-    if args.dataset=='coco81':
-        baseline = args.ckpt.split('/')[-1].split('.')[0]
-        check_dir(f'CUSS/cocostuff27/modularity/{baseline}/{args.num_codebook}')
-        filepath = f'CUSS/cocostuff27/modularity/{baseline}/{args.num_codebook}/modular.npy'
-    elif args.dataset=='coco171':
-        baseline = args.ckpt.split('/')[-1].split('.')[0]
-        check_dir(f'CUSS/cocostuff27/modularity/{baseline}/{args.num_codebook}')
-        filepath = f'CUSS/cocostuff27/modularity/{baseline}/{args.num_codebook}/modular.npy'
-    else:
-        baseline = args.ckpt.split('/')[-1].split('.')[0]
-        check_dir(f'CUSS/{args.dataset}/modularity/{baseline}/{args.num_codebook}')
-        filepath = f'CUSS/{args.dataset}/modularity/{baseline}/{args.num_codebook}/modular.npy'
-    return filepath, exists(filepath)
-
 def main(rank, args, ngpus_per_node):
     # setup ddp process
     if args.distributed: ddp_setup(args, rank, ngpus_per_node)

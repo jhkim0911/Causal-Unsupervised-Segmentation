@@ -97,9 +97,14 @@ def train(args, net, segment, cluster, train_loader, optimizer_segment, writer, 
         # optimizer
         optimizer_segment.zero_grad()
         scaler.scale(loss).backward()
-        if args.dataset=='cityscapses':
+        if args.dataset=='cityscapes':
             scaler.unscale_(optimizer_segment)
             torch.nn.utils.clip_grad_norm_(segment.parameters(), 1)
+        elif args.dataset=='cocostuff27':
+            scaler.unscale_(optimizer_segment)
+            torch.nn.utils.clip_grad_norm_(segment.parameters(), 2)
+        else:
+            raise NotImplementedError
         scaler.step(optimizer_segment)
         scaler.update()
 
@@ -180,14 +185,6 @@ def test(args, net, segment, nice, test_loader):
     if args.distributed: dist.barrier()
 
 
-
-def pickle_path_and_exist(args):
-    from os.path import exists
-    baseline = args.ckpt.split('/')[-1].split('.')[0]
-    check_dir(f'CUSS/{args.dataset}/modularity/{baseline}/{args.num_codebook}')
-    filepath = f'CUSS/{args.dataset}/modularity/{baseline}/{args.num_codebook}/modular.npy'
-    return filepath, exists(filepath)
-
 def main(rank, args, ngpus_per_node):
 
     # setup ddp process
@@ -240,7 +237,10 @@ def main(rank, args, ngpus_per_node):
     ###################################################################################
 
     # optimizer
-    optimizer_segment = torch.optim.Adam(segment.parameters(), lr=1e-3 * ngpus_per_node)
+    if args.dataset=='cityscapes':
+        optimizer_segment = torch.optim.Adam(segment.parameters(), lr=1e-3 * ngpus_per_node)
+    else:
+        optimizer_segment = torch.optim.Adam(segment.parameters(), lr=1e-3 * ngpus_per_node, weight_decay=1e-4)
 
     # tensorboard
     if (args.distributed == True) and (rank == 0):
@@ -312,6 +312,7 @@ if __name__ == "__main__":
     # fetch args
     parser = argparse.ArgumentParser()
     # model parameter
+    parser.add_argument('--NAME-TAG', default='CUSS-TR', type=str)
     parser.add_argument('--data_dir', default='/mnt/hard2/lbk-iccv/datasets', type=str)
     parser.add_argument('--dataset', default='cocostuff27', type=str)
     parser.add_argument('--ckpt', default='checkpoint/dino_vit_small_8.pth', type=str)
