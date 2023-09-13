@@ -52,6 +52,7 @@ def test(args, net, segment, cluster, nice, manytoone, test_loader, cmap):
 
     # evaludation metric reset
     nice.reset()
+    manytoone.reset()
 
 
 
@@ -104,88 +105,7 @@ def test_without_crf(args, net, segment, cluster, nice, manytoone, test_loader):
 
     # evaludation metric reset
     nice.reset()
-
-
-def test_linear_without_crf(args, net, segment, nice, test_loader):
-    segment.eval()
-
-    prog_bar = tqdm(enumerate(test_loader), total=len(test_loader), leave=True)
-    with Pool(40) as pool:
-        for _, batch in prog_bar:
-            # image and label and self supervised feature
-            ind = batch["ind"].cuda()
-            img = batch["img"].cuda()
-            label = batch["label"].cuda()
-
-            with autocast():
-                # intermediate feature
-                feat = net(img)[:, 1:, :]
-                feat_flip = net(img.flip(dims=[3]))[:, 1:, :]
-            seg_feat = transform(segment.head_ema(feat))
-            seg_feat_flip = transform(segment.head_ema(feat_flip))
-            seg_feat = untransform((seg_feat + seg_feat_flip.flip(dims=[3])) / 2)
-
-            # interp feat
-            interp_seg_feat = F.interpolate(transform(seg_feat), label.shape[-2:], mode='bilinear', align_corners=False)
-
-            # linear probe interp feat
-            linear_logits = segment.linear(untransform(interp_seg_feat))
-
-            # cluster preds
-            cluster_preds = linear_logits.argmax(dim=1)
-
-            # nice evaluation
-            _, desc_nice = nice.eval(cluster_preds, label)
-
-            # real-time print
-            desc = f'{desc_nice}'
-            prog_bar.set_description(desc, refresh=True)
-
-    # evaludation metric reset
-    nice.reset()
-
-
-
-def test_linear(args, net, segment, nice, test_loader):
-    segment.eval()
-
-    prog_bar = tqdm(enumerate(test_loader), total=len(test_loader), leave=True)
-    with Pool(40) as pool:
-        for _, batch in prog_bar:
-            # image and label and self supervised feature
-            ind = batch["ind"].cuda()
-            img = batch["img"].cuda()
-            label = batch["label"].cuda()
-
-            with autocast():
-                # intermediate feature
-                feat = net(img)[:, 1:, :]
-                feat_flip = net(img.flip(dims=[3]))[:, 1:, :]
-            seg_feat = transform(segment.head_ema(feat))
-            seg_feat_flip = transform(segment.head_ema(feat_flip))
-            seg_feat = untransform((seg_feat + seg_feat_flip.flip(dims=[3])) / 2)
-
-            # interp feat
-            interp_seg_feat = F.interpolate(transform(seg_feat), label.shape[-2:], mode='bilinear', align_corners=False)
-
-            # linear probe interp feat
-            linear_logits = segment.linear(untransform(interp_seg_feat))
-
-            # cluster preds
-            cluster_preds = torch.log_softmax(linear_logits, dim=1)
-
-            # crf
-            crf_preds = do_crf(pool, img, cluster_preds).argmax(1).cuda()
-
-            # nice evaluation
-            _, desc_nice = nice.eval(crf_preds, label)
-
-            # real-time print
-            desc = f'{desc_nice}'
-            prog_bar.set_description(desc, refresh=True)
-
-    # evaludation metric reset
-    nice.reset()
+    manytoone.reset()
 
 
 def main(rank, args):
@@ -236,21 +156,6 @@ def main(rank, args):
         manytoone,
         test_loader,
         cmap)
-    
-    # post-processing with crf and hungarian matching
-    # test_linear_without_crf(
-    #     args,
-    #     net,
-    #     segment,
-    #     nice,
-    #     test_loader)
-    
-    # test_linear(
-    #     args,
-    #     net,
-    #     segment,
-    #     nice,
-    #     test_loader)
 
 
 if __name__ == "__main__":

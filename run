@@ -33,9 +33,9 @@ structure="MLP"
 # [OPTION] Self-Supervised Method
 
 # DINO
-# ckpt="checkpoint/dino_vit_small_8.pth"
+ckpt="checkpoint/dino_vit_small_8.pth"
 # ckpt="checkpoint/dino_vit_small_16.pth"
-ckpt="checkpoint/dino_vit_base_8.pth"
+# ckpt="checkpoint/dino_vit_base_8.pth"
 # ckpt="checkpoint/dino_vit_base_16.pth"
 
 # DINOv2
