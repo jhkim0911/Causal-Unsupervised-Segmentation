@@ -75,16 +75,6 @@ def train(args, net, segment, cluster, train_loader, optimizer_segment, optimize
         elif args.dataset=='cocostuff27':
             scaler.unscale_(optimizer_segment)
             torch.nn.utils.clip_grad_norm_(segment.parameters(), 0.1)
-        elif args.dataset=='coco81':
-            scaler.unscale_(optimizer_segment)
-            torch.nn.utils.clip_grad_norm_(segment.parameters(), 1)
-        elif args.dataset=='coco171':
-            scaler.unscale_(optimizer_segment)
-            torch.nn.utils.clip_grad_norm_(segment.parameters(), 1)
-        elif args.dataset=='pascalvoc':
-            pass
-        else:
-            raise NotImplementedError
         scaler.step(optimizer_segment)
         scaler.step(optimizer_cluster)
         scaler.update()
@@ -187,20 +177,9 @@ def main(rank, args, ngpus_per_node):
     if args.dataset=='cityscapes':
         optimizer_segment = torch.optim.Adam(segment.parameters(), lr=1e-3 * ngpus_per_node)
         optimizer_cluster = torch.optim.Adam(cluster.parameters(), lr=1e-3 * ngpus_per_node)
-    elif args.dataset=='cocostuff27':
-        optimizer_segment = torch.optim.Adam(segment.parameters(), lr=1e-3 * ngpus_per_node, weight_decay=1e-4)
-        optimizer_cluster = torch.optim.Adam(cluster.parameters(), lr=1e-3 * ngpus_per_node)
-    elif args.dataset=='coco81':
-        optimizer_segment = torch.optim.Adam(segment.parameters(), lr=1e-3 * ngpus_per_node, weight_decay=1e-4)
-        optimizer_cluster = torch.optim.Adam(cluster.parameters(), lr=1e-3 * ngpus_per_node)
-    elif args.dataset=='coco171':
-        optimizer_segment = torch.optim.Adam(segment.parameters(), lr=1e-3 * ngpus_per_node, weight_decay=1e-4)
-        optimizer_cluster = torch.optim.Adam(cluster.parameters(), lr=1e-3 * ngpus_per_node)
-    elif args.dataset=='pascalvoc':
-        optimizer_segment = torch.optim.Adam(segment.parameters(), lr=1e-3 * ngpus_per_node, weight_decay=1e-4)
-        optimizer_cluster = torch.optim.Adam(cluster.parameters(), lr=1e-3 * ngpus_per_node)
     else:
-        raise NotImplementedError
+        optimizer_segment = torch.optim.Adam(segment.parameters(), lr=1e-3 * ngpus_per_node, weight_decay=1e-4)
+        optimizer_cluster = torch.optim.Adam(cluster.parameters(), lr=1e-3 * ngpus_per_node)
     
     # scheduler
     scheduler_segment = torch.optim.lr_scheduler.StepLR(optimizer_segment, step_size=2, gamma=0.5)

@@ -314,5 +314,3 @@ if __name__ == "__main__":
 
     # first gpu index is activated once there are several gpu in args.gpu
     main(rank=gpu_list[0], args=args)
-
-# %%
