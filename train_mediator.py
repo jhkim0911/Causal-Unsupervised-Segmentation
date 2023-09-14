@@ -144,6 +144,10 @@ if __name__ == "__main__":
     # parameter
     parser.add_argument('--grid', default='yes', type=str2bool)
     parser.add_argument('--num_codebook', default=2048, type=int)
+    
+    # model parameter
+    parser.add_argument('--reduced_dim', default=90, type=int)
+    parser.add_argument('--projection_dim', default=2048, type=int)
 
     args = parser.parse_args()
 
@@ -152,12 +156,8 @@ if __name__ == "__main__":
         args.test_resolution=322
     if 'small' in args.ckpt:
         args.dim=384
-        args.reduced_dim=90
-        args.projection_dim=2048
     elif 'base' in args.ckpt:
         args.dim=768
-        args.reduced_dim=90
-        args.projection_dim=2048
 
     # the number of gpus for multi-process
     gpu_list = list(map(int, args.gpu.split(',')))

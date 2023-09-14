@@ -77,14 +77,13 @@ def train(args, net, segment, cluster, train_loader, optimizer_segment, optimize
         elif args.dataset=='cocostuff27':
             scaler.unscale_(optimizer_segment)
             torch.nn.utils.clip_grad_norm_(segment.parameters(), 2)
-        elif args.dataset=='pascalvoc':
-            pass
         elif args.dataset=='coco81':
             scaler.unscale_(optimizer_segment)
             torch.nn.utils.clip_grad_norm_(segment.parameters(), 2)
         elif args.dataset=='coco171':
-            # scaler.unscale_(optimizer_segment)
-            # torch.nn.utils.clip_grad_norm_(segment.parameters(), 2)
+            scaler.unscale_(optimizer_segment)
+            torch.nn.utils.clip_grad_norm_(segment.parameters(), 2)
+        elif args.dataset=='pascalvoc':
             pass
         else:
             raise NotImplementedError

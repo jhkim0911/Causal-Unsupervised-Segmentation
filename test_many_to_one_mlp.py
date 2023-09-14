@@ -44,7 +44,7 @@ def test(args, net, segment, cluster, nice, manytoone, test_loader, cmap):
             _, desc_nice = nice.eval(mathcing_crf_preds, label)
 
             # save images
-            save_all(args, ind, img, label, cluster_preds.argmax(dim=1), crf_preds, mathcing_crf_preds, cmap, is_tr=True)
+            save_all(args, ind, img, label, cluster_preds.argmax(dim=1), crf_preds, mathcing_crf_preds, cmap)
 
             # real-time print
             desc = f'{desc_nice}'

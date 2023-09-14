@@ -36,9 +36,6 @@ class RandomCropComputer(Dataset):
                                 + ten_crop(x, self._get_size(x, 0.6))\
                                 + ten_crop(x, self._get_size(x, 0.7))
 
-                                
-
-
         if args.dataset=='coco171':
             self.save_dir = join(
                 args.data_dir, 'cocostuff', "cropped", "coco171_{}_crop_{}".format(crop_type, crop_ratio))
@@ -83,13 +80,17 @@ def my_app():
 
     # dataset and baseline
     parser.add_argument('--data_dir', default='/mnt/hard2/lbk-iccv/datasets', type=str)
-    parser.add_argument('--dataset', default='pascalvoc', type=str)
+    parser.add_argument('--dataset', default='coco171', type=str)
+    parser.add_argument('--gpu', default=1, type=int)
     parser.add_argument('--distributed', default='false', type=str2bool)
-    parser.add_argument('--crop_type', default='super', type=str)
+    parser.add_argument('--crop_type', default='five', type=str)
     parser.add_argument('--crop_ratio', default=0.5, type=float)
 
     args = parser.parse_args()
     
+    # setting gpu id of this process
+    torch.cuda.set_device(args.gpu)
+
     counter = 0
     dataset = RandomCropComputer(args, args.dataset, "train", args.crop_type, args.crop_ratio)
     loader = DataLoader(dataset, 1, shuffle=False, num_workers=args.num_workers, collate_fn=lambda l: l)

@@ -73,23 +73,12 @@ def dataloader(args, no_ddp_train_shuffle=True):
 
 
 class Coco81(Dataset):
-    def __init__(self, root, image_set, transform, target_transform,
-                 coarse_labels, exclude_things, subset=None):
+    def __init__(self, root, image_set, transform, target_transform):
         super().__init__()
         self.split = image_set
         self.root = join(root, "cocostuff")
-        self.coarse_labels = coarse_labels
         self.transform = transform
         self.label_transform = target_transform
-        self.subset = subset
-        self.exclude_things = exclude_things
-
-        if self.subset is None:
-            self.image_list = "Coco164kFull_Stuff_Coarse.txt"
-        elif self.subset == 6:  # IIC Coarse
-            self.image_list = "Coco164kFew_Stuff_6.txt"
-        elif self.subset == 7:  # IIC Fine
-            self.image_list = "Coco164kFull_Stuff_Coarse_7.txt"
 
         assert self.split in ["train", "val", "train+val"]
         split_dirs = {
@@ -101,7 +90,7 @@ class Coco81(Dataset):
         self.image_files = []
         self.label_files = []
         for split_dir in split_dirs[self.split]:
-            with open(join(self.root, "images", split_dir, self.image_list), "r") as f:
+            with open(join(self.root, "curated", split_dir, "Coco164kFull_Stuff_Coarse.txt"), "r") as f:
                 img_ids = [fn.rstrip() for fn in f.readlines()]
                 for img_id in img_ids:
                     self.image_files.append(join(self.root, "images", split_dir, img_id + ".jpg"))
@@ -139,13 +128,6 @@ class Coco81(Dataset):
                                169: 0, 170: 0, 171: 0, 172: 0, 173: 0, 174: 0, 
                                175: 0, 176: 0, 177: 0, 178: 0, 179: 0, 180: 0, 181: 0, 255: -1}
 
-        self._label_names = [
-            "ground-stuff",
-            "plant-stuff",
-            "sky-stuff",
-        ]
-        self.cocostuff3_coarse_classes = [23, 22, 21]
-        self.first_stuff_index = 12
 
     def __getitem__(self, index):
         image_path = self.image_files[index]
@@ -163,40 +145,19 @@ class Coco81(Dataset):
         for fine, coarse in self.fine_to_coarse.items():
             coarse_label[label == fine] = coarse
         coarse_label[label == -1] = -1
-
-        if self.coarse_labels:
-            coarser_labels = -torch.ones_like(label)
-            for i, c in enumerate(self.cocostuff3_coarse_classes):
-                coarser_labels[coarse_label == c] = i
-            return img, coarser_labels, coarser_labels >= 0
-        else:
-            if self.exclude_things:
-                return img, coarse_label - self.first_stuff_index, (coarse_label >= self.first_stuff_index)
-            else:
-                return img, coarse_label, coarse_label >= 0
+        return img, coarse_label, coarse_label >= 0
 
     def __len__(self):
         return len(self.image_files)
 
 
 class Coco171(Dataset):
-    def __init__(self, root, image_set, transform, target_transform,
-                 coarse_labels, exclude_things, subset=None):
+    def __init__(self, root, image_set, transform, target_transform):
         super().__init__()
         self.split = image_set
         self.root = join(root, "cocostuff")
-        self.coarse_labels = coarse_labels
         self.transform = transform
         self.label_transform = target_transform
-        self.subset = subset
-        self.exclude_things = exclude_things
-
-        if self.subset is None:
-            self.image_list = "Coco164kFull_Stuff_Coarse.txt"
-        elif self.subset == 6:  # IIC Coarse
-            self.image_list = "Coco164kFew_Stuff_6.txt"
-        elif self.subset == 7:  # IIC Fine
-            self.image_list = "Coco164kFull_Stuff_Coarse_7.txt"
 
         assert self.split in ["train", "val", "train+val"]
         split_dirs = {
@@ -208,7 +169,7 @@ class Coco171(Dataset):
         self.image_files = []
         self.label_files = []
         for split_dir in split_dirs[self.split]:
-            with open(join(self.root, "curated", split_dir, self.image_list), "r") as f:
+            with open(join(self.root, "curated", split_dir, "Coco164kFull_Stuff_Coarse.txt"), "r") as f:
                 img_ids = [fn.rstrip() for fn in f.readlines()]
                 for img_id in img_ids:
                     self.image_files.append(join(self.root, "images", split_dir, img_id + ".jpg"))
@@ -389,13 +350,6 @@ class Coco171(Dataset):
                                 255: -1
                             }
 
-        self._label_names = [
-            "ground-stuff",
-            "plant-stuff",
-            "sky-stuff",
-        ]
-        self.cocostuff3_coarse_classes = [23, 22, 21]
-        self.first_stuff_index = 12
 
     def __getitem__(self, index):
         image_path = self.image_files[index]
@@ -413,17 +367,7 @@ class Coco171(Dataset):
         for fine, coarse in self.fine_to_coarse.items():
             coarse_label[label == fine] = coarse
         coarse_label[label == -1] = -1
-
-        if self.coarse_labels:
-            coarser_labels = -torch.ones_like(label)
-            for i, c in enumerate(self.cocostuff3_coarse_classes):
-                coarser_labels[coarse_label == c] = i
-            return img, coarser_labels, coarser_labels >= 0
-        else:
-            if self.exclude_things:
-                return img, coarse_label - self.first_stuff_index, (coarse_label >= self.first_stuff_index)
-            else:
-                return img, coarse_label, coarse_label >= 0
+        return img, coarse_label, coarse_label >= 0
 
     def __len__(self):
         return len(self.image_files)
@@ -482,11 +426,6 @@ class Coco(Dataset):
                                167: 17, 168: 22, 169: 14, 170: 18, 171: 18, 172: 18, 173: 18, 174: 18, 175: 18, 176: 18,
                                177: 26, 178: 26, 179: 19, 180: 19, 181: 24}
 
-        self._label_names = [
-            "ground-stuff",
-            "plant-stuff",
-            "sky-stuff",
-        ]
         self.cocostuff3_coarse_classes = [23, 22, 21]
         self.first_stuff_index = 12
 
@@ -671,10 +610,10 @@ class ContrastiveSegDataset(Dataset):
         # coco-81, coco-171, pascalvoc
         elif dataset_name == "coco81" and crop_type is None:
             dataset_class = Coco81
-            extra_args = dict(coarse_labels=False, subset=None, exclude_things=False)
+            extra_args = dict()
         elif dataset_name == "coco171" and crop_type is None:
             dataset_class = Coco171
-            extra_args = dict(coarse_labels=False, subset=None, exclude_things=False)
+            extra_args = dict()
         elif dataset_name == "pascalvoc" and crop_type is None:
             dataset_class = PascalVOC.PascalVOCGenerator
             extra_args = dict()
