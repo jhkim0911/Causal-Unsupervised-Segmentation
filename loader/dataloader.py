@@ -32,7 +32,6 @@ def dataloader(args, no_ddp_train_shuffle=True):
         args.n_classes = 171
         get_transform = get_cococity_transform
 
-
     # train dataset
     train_dataset = ContrastiveSegDataset(
         pytorch_data_dir=args.data_dir,
@@ -621,10 +620,10 @@ class ContrastiveSegDataset(Dataset):
         # coco-81, coco-171, pascalvoc [Crop]
         elif dataset_name == "coco81" and crop_type is not None:
             dataset_class = CroppedDataset
-            extra_args = dict(dataset_name="coco81", crop_type=crop_type, crop_ratio=0.5)
+            extra_args = dict(dataset_name="coco81", crop_type='double', crop_ratio=0)
         elif dataset_name == "coco171" and crop_type is not None:
             dataset_class = CroppedDataset
-            extra_args = dict(dataset_name="coco171", crop_type=crop_type, crop_ratio=0.5)
+            extra_args = dict(dataset_name="coco171", crop_type='double', crop_ratio=0)
         elif dataset_name == "pascalvoc" and crop_type is not None:
             dataset_class = CroppedDataset
             extra_args = dict(dataset_name="pascalvoc", crop_type='super', crop_ratio=0)

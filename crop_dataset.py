@@ -28,6 +28,10 @@ class RandomCropComputer(Dataset):
 
         if crop_type == 'five':
             crop_func = lambda x: five_crop(x, self._get_size(x, crop_ratio))
+        elif crop_type == 'double':
+            crop_ratio = 0
+            crop_func = lambda x: ten_crop(x, self._get_size(x, 0.5))\
+                                + ten_crop(x, self._get_size(x, 0.8))
         elif crop_type == 'super':
             crop_ratio = 0
             crop_func = lambda x: ten_crop(x, self._get_size(x, 0.3))\
@@ -83,7 +87,7 @@ def my_app():
     parser.add_argument('--dataset', default='coco171', type=str)
     parser.add_argument('--gpu', default=1, type=int)
     parser.add_argument('--distributed', default='false', type=str2bool)
-    parser.add_argument('--crop_type', default='five', type=str)
+    parser.add_argument('--crop_type', default='double', type=str)
     parser.add_argument('--crop_ratio', default=0.5, type=float)
 
     args = parser.parse_args()

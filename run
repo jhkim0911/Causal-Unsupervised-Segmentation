@@ -3,30 +3,30 @@
 # [OPTION] DATASET
 
 # cocostuff27
-# dataset="stuff"
+# dataset="cocostuff27"
 # reduced_dim=90
 
 # cityscapes
-# dataset="city"
+# dataset="cityscapes"
+# reduced_dim=90
+
+# pascalvoc
+# dataset="pascalvoc"
 # reduced_dim=90
 
 # coco-81
 dataset="coco81"
-reduced_dim=128
+reduced_dim=90
 
 # coco-171
 # dataset="coco171"
-# reduced_dim=256
-
-# pascalvoc
-# dataset="pascalvoc"
 # reduced_dim=90
 ######################################
 
 ######################################
 # [OPTION] STRUCTURE
-# structure="MLP"
-structure="TR"
+structure="MLP"
+# structure="TR"
 ######################################
 
 ######################################
@@ -39,11 +39,9 @@ ckpt="checkpoint/dino_vit_small_8.pth"
 # ckpt="checkpoint/dino_vit_base_16.pth"
 
 # DINOv2
-# ckpt="checkpoint/dinov2_vit_small_14.pth"
 # ckpt="checkpoint/dinov2_vit_base_14.pth"
 
 # iBOT
-# ckpt="checkpoint/ibot_vit_small_16.pth"
 # ckpt="checkpoint/ibot_vit_base_16.pth"
 
 # MSN

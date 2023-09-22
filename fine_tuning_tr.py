@@ -38,7 +38,6 @@ def train(args, net, segment, cluster, train_loader, optimizer_segment, optimize
     total_loss_linear = 0
     total_loss_mod = 0
 
-
     prog_bar = tqdm(enumerate(train_loader), total=len(train_loader), leave=True)
     for idx, batch in prog_bar:
 
@@ -77,9 +76,6 @@ def train(args, net, segment, cluster, train_loader, optimizer_segment, optimize
         elif args.dataset=='cocostuff27':
             scaler.unscale_(optimizer_segment)
             torch.nn.utils.clip_grad_norm_(segment.parameters(), 2)
-        elif args.dataset=='coco81':
-            scaler.unscale_(optimizer_segment)
-            torch.nn.utils.clip_grad_norm_(segment.parameters(), 1)
         scaler.step(optimizer_segment)
         scaler.step(optimizer_cluster)
         scaler.update()

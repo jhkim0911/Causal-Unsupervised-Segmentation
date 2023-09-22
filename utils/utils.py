@@ -54,6 +54,9 @@ class Wrapper(object):
 def pickle_path_and_exist(args):
     from os.path import exists
     baseline = args.ckpt.split('/')[-1].split('.')[0]
+    check_dir(f'CUSS/{args.dataset}')
+    check_dir(f'CUSS/{args.dataset}/modularity')
+    check_dir(f'CUSS/{args.dataset}/modularity/{baseline}')
     check_dir(f'CUSS/{args.dataset}/modularity/{baseline}/{args.num_codebook}')
     filepath = f'CUSS/{args.dataset}/modularity/{baseline}/{args.num_codebook}/modular.npy'
     return filepath, exists(filepath)
@@ -214,7 +217,7 @@ class NiceTool(object):
                        "Acc": opc.item() * 100})
 
 
-        self.metric_by_class = OrderedDict({"mIoU": iou * 100,
+        self.metric_dict_by_class = OrderedDict({"mIoU": iou * 100,
                        # "Precision per Class (%)": prc * 100,
                        "mAP": prc * 100,
                        "Acc": (torch.diag(hist) / hist.sum(dim=1)) * 100})
