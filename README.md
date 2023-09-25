@@ -129,28 +129,86 @@ you can download them in the following links:
 ## How to Run CAUSE?
 
 
+For the first, we should generate the cropped dataset by following [STEGO](https://github.com/mhamilton723/STEGO) in ICLR 2022.
+
+
+```shell script
+python crop_dataset.py --dataset "cocostuff27" --crop_type "five"
+python crop_dataset.py --dataset "cityscapes"  --crop_type "five"
+python crop_dataset.py --dataset "pascalvoc"   --crop_type "super"
+python crop_dataset.py --dataset "cooc81"      --crop_type "double"
+python crop_dataset.py --dataset "cooc171"     --crop_type "double"
+```
+
+And then,
+
 ```shell bash
-bash run # All of three steps integrated
+bash run # All of the following three steps integrated
 ```
 
 In this shell script file, you can see the following code
 
 ```shell script
-dataset="cityscapes" # cocostuff27 or cityscapes
-train_gpu="0,1,2,3" # Only multi-gpu for DDP (if you want to run single gpu, then you will add "distributed" and set it to "False")
-test_gpu="${train_gpu:0}" # Only singe gpu
-ckpt="checkpoint/dino_vit_base_8.pth" # checkpoint root (/checkpoint) and its filename (name type is really important to run)
-port=$(($RANDOM%100+1200)) # DDP port number
+#!/bin/bash
+######################################
+# [OPTION] DATASET
+# cocostuff27
+dataset="cocostuff27"
+#############
 
-# MLP
-python train_front_door_mlp.py --dataset $dataset --ckpt $ckpt --gpu $train_gpu --port $port && python fine_tuning_mlp.py --dataset $dataset --ckpt $ckpt --gpu $train_gpu --port $port && python test_mlp.py --dataset $dataset --ckpt $ckpt --gpu $test_gpu
+######################################
+# [OPTION] STRUCTURE
+structure="TR"
+######################################
 
-# TR
-python train_front_door_tr.py --dataset $dataset --ckpt $ckpt --gpu $train_gpu --port $port && python fine_tuning_tr.py --dataset $dataset --ckpt $ckpt --gpu $train_gpu --port $port && python test_tr.py --dataset $dataset --ckpt $ckpt --gpu $test_gpu
+######################################
+# [OPTION] Self-Supervised Method
+ckpt="checkpoint/dino_vit_base_8.pth"
+######################################
 
-# only test (if you want to only run test for evaluation, then you can uncomment it and run it)
-# python test_mlp.py --dataset $dataset --ckpt $ckpt --gpu $test_gpu
-# python test_tr.py --dataset $dataset --ckpt $ckpt --gpu $test_gpu
+######################################
+# GPU and PORT
+if [ "$structure" = "MLP" ]
+then
+    train_gpu="0,1,2,3"
+elif [ "$structure" = "TR" ]
+then
+    train_gpu="4,5,6,7"
+fi
+
+# Non-Changeable Variable
+test_gpu="${train_gpu:0}"
+port=$(($RANDOM%800+1200))
+######################################
+
+######################################
+# [STEP1] MEDIATOR
+python train_mediator.py --dataset $dataset --ckpt $ckpt --gpu $train_gpu --port $port
+######################################
+
+######################################
+# [STEP2] CAUSE
+if [ "$structure" = "MLP" ]
+then 
+    python train_front_door_mlp.py --dataset $dataset --ckpt $ckpt --gpu $train_gpu --port $port
+    python fine_tuning_mlp.py --dataset $dataset --ckpt $ckpt --gpu $train_gpu --port $port
+elif [ "$structure" = "TR" ]
+then
+    python train_front_door_tr.py --dataset $dataset --ckpt $ckpt --gpu $train_gpu --port $port 
+    python fine_tuning_tr.py --dataset $dataset --ckpt $ckpt --gpu $train_gpu --port $port
+fi
+######################################
+
+######################################
+# TEST
+if [ "$structure" = "MLP" ]
+then 
+    python test_mlp.py --dataset $dataset --ckpt $ckpt --gpu $test_gpu
+elif [ "$structure" = "TR" ]
+then 
+    python test_tr.py --dataset $dataset --ckpt $ckpt --gpu $test_gpu
+fi
+######################################
 ```
 
 
@@ -159,34 +217,40 @@ python train_front_door_tr.py --dataset $dataset --ckpt $ckpt --gpu $train_gpu -
 ### (STEP 1): Generating Mediator based on Modularity
 
 ```shell script
-python train_mediator.py # DINO/DINOv2/iBOT/MAE/MSN
+python train_mediator.py # DINO/DINOv2/iBOT/MSN/MAE
 ```
 
 ### (STEP 2): Frontdoor Adjustment through Contrastive Learning
 
 ```shell script
-python train_front_door_mlp.py # MLP
+python train_front_door_mlp.py # CAUSE-MLP
+
 # or
-python train_front_door_tr.py # TR
+
+python train_front_door_tr.py # CAUSE-TR
 ```
 
 
 ### (STEP 3):  *Technical STEP: Fine-Tuning Cluster Probe*
 
 ```shell script
-python fine_tuning_mlp.py # MLP
+python fine_tuning_mlp.py # CAUSE-MLP
+
 # or
-python fine_tuning_tr.py # TR
+
+python fine_tuning_tr.py # CAUSE-TR
 ```
 
 ---
 
-### 2. Testing Cause
+### 2. Testing CAUSE
 
 ```shell script
-python test_mlp.py # MLP
+python test_mlp.py # CAUSE-MLP
+
 # or
-python test_tr.py # TR
+
+python test_tr.py # CAUSE-TR
 ```
 
 ---
