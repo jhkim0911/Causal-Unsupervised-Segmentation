@@ -84,10 +84,10 @@ def my_app():
 
     # dataset and baseline
     parser.add_argument('--data_dir', default='/mnt/hard2/lbk-iccv/datasets', type=str)
-    parser.add_argument('--dataset', default='coco171', type=str)
+    parser.add_argument('--dataset', default='cocostuff27', type=str)
     parser.add_argument('--gpu', default=1, type=int)
     parser.add_argument('--distributed', default='false', type=str2bool)
-    parser.add_argument('--crop_type', default='double', type=str)
+    parser.add_argument('--crop_type', default='five', type=str)
     parser.add_argument('--crop_ratio', default=0.5, type=float)
 
     args = parser.parse_args()
