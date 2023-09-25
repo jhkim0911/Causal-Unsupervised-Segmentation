@@ -3,7 +3,7 @@
 # [OPTION] DATASET
 
 # cocostuff27
-# dataset="cocostuff27"
+dataset="cocostuff27"
 
 # cityscapes
 # dataset="cityscapes"
@@ -12,7 +12,7 @@
 # dataset="pascalvoc"
 
 # coco-81
-dataset="coco81"
+# dataset="coco81"
 
 # coco-171
 # dataset="coco171"
@@ -20,17 +20,17 @@ dataset="coco81"
 
 ######################################
 # [OPTION] STRUCTURE
-structure="MLP"
-# structure="TR"
+# structure="MLP"
+structure="TR"
 ######################################
 
 ######################################
 # [OPTION] Self-Supervised Method
 
 # DINO
-ckpt="checkpoint/dino_vit_small_8.pth"
+# ckpt="checkpoint/dino_vit_small_8.pth"
 # ckpt="checkpoint/dino_vit_small_16.pth"
-# ckpt="checkpoint/dino_vit_base_8.pth"
+ckpt="checkpoint/dino_vit_base_8.pth"
 # ckpt="checkpoint/dino_vit_base_16.pth"
 
 # DINOv2
