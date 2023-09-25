@@ -8,8 +8,6 @@ visualize_distance_matrix.py
 scikit_cluster.py
 linear_probing_mlp.py
 linear_probing_tr.py
-over_clustering_mlp.py
-over_clustering_tr.py
 test_category_mlp.py
 test_category_tr.py
 crop.py
