@@ -12,20 +12,23 @@ You can see the following bundle of images in Appendix.
 Further, we explain concrete implementation beyond the description of the main paper.
 
 <figure class="half">
-<img src="figure/COCO-Stuff.png" width="940" height="500">
 <figcaption>
 Visual comparison of USS for COCO-stuff. Note that, in contrast to
 true labels, baseline frameworks fail to
 achieve targeted level of granularity, while CAUSE successfully clusters person, sports, vehicle, etc.
 </figcaption>
-<img src="figure/Cityscapes.png" width="940" height="500">
+<img src="figure/COCO-Stuff.png" width="940" height="500">
+
 <figcaption>
 Qualitative comparison of unsupervised semantic segmentation for Cityscapes.
 </figcaption>
-<img src="figure/Category-Wise.png" width="940" height="150">
+<img src="figure/Cityscapes.png" width="940" height="500">
+
 <figcaption>
 Log scale of mIoU results for each categories in COCO-Stuff (Black: Thing / Gray: Stuff )
 </figcaption>
+<img src="figure/Category-Wise.png" width="940" height="150">
+
 <figure>
 
 
