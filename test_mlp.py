@@ -250,7 +250,7 @@ if __name__ == "__main__":
     # fetch args
     parser = argparse.ArgumentParser()
     # model parameter
-    parser.add_argument('--NAME-TAG', default='CUSS-MLP', type=str)
+    parser.add_argument('--NAME-TAG', default='CAUSE-MLP', type=str)
     parser.add_argument('--data_dir', default='/mnt/hard2/lbk-iccv/datasets', type=str)
     parser.add_argument('--dataset', default='coco171', type=str)
     parser.add_argument('--port', default='12355', type=str)

@@ -1,7 +1,7 @@
 
 # ***Title: Causal Unsupervised Semantic Segmentation***
 
-This is pytorch implementation code for realizing the technical part of *Causal Unsupervised Semantic Segmentation (CUSS)* to improve performance of unsupervised semantic segmentation.
+This is pytorch implementation code for realizing the technical part of *CAusal Unsupervised Semantic sEgmentation (CAUSE)* to improve performance of unsupervised semantic segmentation.
 This code is further developed by two baseline codes of [HP: Leveraging Hidden Positives for Unsupervised Semantic Segmentation](https://github.com/hynnsk/HP) accpeted in [CVPR 2023](https://openaccess.thecvf.com/content/CVPR2023/papers/Seong_Leveraging_Hidden_Positives_for_Unsupervised_Semantic_Segmentation_CVPR_2023_paper.pdf)
 and [STEGO: Unsupervised Semantic Segmentation by Distilling Feature Correspondences](https://github.com/mhamilton723/STEGO) accepted in [ICLR 2022](https://iclr.cc/virtual/2022/poster/6068).
 
@@ -12,19 +12,19 @@ You can see the following bundle of images in Appendix.
 Further, we explain concrete implementation beyond the description of the main paper.
 
 <figure class="half">
-<img src="figure/COCO-stuff.png" width="640" height="500">
-<img src="figure/Cityscapes.png" width="640" height="500">
+<img src="figure/COCO-Stuff.png" width="940" height="500">
+<img src="figure/Cityscapes.png" width="940" height="500">
 <figure>
 
 
 ---
 
-## Download Visual Quality and Checkpoints of CUSS (Under preparation for Sharable Link, The updated will be simultaneously completed within a few day!)
+## Download Visual Quality and Checkpoints of CAUSE (Under preparation for Sharable Link, The updated will be simultaneously completed within a few day!)
 
-You can download the checkpoint files including CUSS-trained parameters based on
+You can download the checkpoint files including CAUSE-trained parameters based on
 [DINO](https://openaccess.thecvf.com/content/ICCV2021/papers/Caron_Emerging_Properties_in_Self-Supervised_Vision_Transformers_ICCV_2021_paper.pdf), [DINOv2](https://arxiv.org/pdf/2304.07193.pdf), [iBOT](https://openreview.net/pdf?id=ydopy-e6Dg), [MSN](https://www.ecva.net/papers/eccv_2022/papers_ECCV/papers/136910442.pdf), [MAE](https://openaccess.thecvf.com/content/CVPR2022/papers/He_Masked_Autoencoders_Are_Scalable_Vision_Learners_CVPR_2022_paper.pdf)
 in self-supervised vision transformer framework.
-If you want to download the pretrained models of DINO in various structures the following CUSS uses,
+If you want to download the pretrained models of DINO in various structures the following CAUSE uses,
 you can download them in the following links:
 
 * [DINO](https://github.com/facebookresearch/dino), ICCV 2021
@@ -35,42 +35,64 @@ you can download them in the following links:
 
 ---
 
-|   Dataset    | Method        | Baseline   | mIoU(%) | pAcc(%) |  Visual Quality                                         |                                           Checkpoint                                           |
-|:------------:|---------------|------------|:-------:|:-------:|:---------------------------------------------------------------------------------------------:|:----------------------------------------------------------------------------------------------:|
-|  COCO-Stuff  | DINO+**CUSS** | ViT-S/8  |  26.4   |  65.3   |  [[link]]()   | [[link]]() |
-|  COCO-Stuff  | DINO+**CUSS** | ViT-S/16 |  27.3   |  63.8   |  [[link]]()   | [[link]]() |
-|  COCO-Stuff  | DINO+**CUSS** | ViT-B/8  |  31.4   |  69.1   |  [[link]]()   | [[link]]() | 
-|  COCO-Stuff  | DINO+**CUSS** | ViT-B/16 |  28.8   |  67.4   |  [[link]]()   | [[link]]() |
-|  COCO-Stuff  | DINOv2+**CUSS** | ViT-S/14 |  27.3   |  63.8   |  [[link]]()   | [[link]]() |
-|  COCO-Stuff  | DINOv2+**CUSS** | ViT-B/14 |  28.8   |  67.4   |  [[link]]()   | [[link]]() |
-|  COCO-Stuff  | iBOT+**CUSS** | ViT-S/16 |  28.8   |  67.4   |  [[link]]()   | [[link]]() |
-|  COCO-Stuff  | iBOT+**CUSS** | ViT-B/16 |  28.8   |  67.4   |  [[link]]()   | [[link]]() |
-|  COCO-Stuff  | MSN+**CUSS** | ViT-S/16 |  28.8   |  67.4   |  [[link]]()   | [[link]]() |
-|  COCO-Stuff  | MAE+**CUSS** | ViT-B/16 |  28.8   |  67.4   |  [[link]]()   | [[link]]() |
+`$var = "LYNMP";`
+
+|   Dataset    | Method        | Baseline   | mIoU(%) | pAcc(%) |  Visual Quality                                         |                                           Parameter | Concept ClusterBook |
+|:------------|---------------|------------|:-------:|:-------:|:---------------------------------------------------------------------------------------------:|:----------------------------------------------------------------------------------------------:|:----------------------------------------------------------------------------------------------:|
+|  COCO-Stuff  | DINO+**CAUSE-MLP** | ViT-S/8  |  27.9   |  66.8   |  [[link]](https://drive.google.com/file/d/1Z0Zj9JWJQQk6qeRctcdAk9MfyZQCwkvW/view?usp=drive_link)   | [[link]](https://drive.google.com/drive/folders/1ByLMYly-lLAa4vBQZ8Sv8nLSWBLPbev-?usp=drive_link) | [[link]](https://drive.google.com/drive/folders/14bq-B4Xj4V3Usl2b2SfobCOaap4lzIXl?usp=drive_link) |
+|  COCO-Stuff  | DINO+**CAUSE-TR** | ViT-S/8   |  32.4   |  69.6   |  [[link]](https://drive.google.com/file/d/1x9LNwCiXtZel-fTh8TqtRgHmmmrIFPgg/view?usp=drive_link)   | [[link]](https://drive.google.com/drive/folders/1ByLMYly-lLAa4vBQZ8Sv8nLSWBLPbev-?usp=drive_link) | [[link]](https://drive.google.com/drive/folders/14bq-B4Xj4V3Usl2b2SfobCOaap4lzIXl?usp=drive_link) |
+|  COCO-Stuff  | DINO+**CAUSE-MLP** | ViT-S/16 |  25.9   |  66.3   |  [[link]](https://drive.google.com/file/d/1wcMomwarw5gQ3sSSmQlZICtP4r3kZMN8/view?usp=drive_link)   | [[link]](https://drive.google.com/drive/folders/1PfOHDxWF_YcPVOApUSK-xHDUSY32domZ?usp=drive_link) | [[link]](https://drive.google.com/drive/folders/1GnVOgtOZdt8N7M6cudd5d59FqZAQDDG5?usp=drive_link)|
+|  COCO-Stuff  | DINO+**CAUSE-TR** | ViT-S/16  |  33.1   |  70.4   |  [[link]](https://drive.google.com/file/d/198_-3BvN_GCI63_Mx4lEPCHl0L9Fk2p2/view?usp=drive_link)   | [[link]](https://drive.google.com/drive/folders/1PfOHDxWF_YcPVOApUSK-xHDUSY32domZ?usp=drive_link) |[[link]](https://drive.google.com/drive/folders/1GnVOgtOZdt8N7M6cudd5d59FqZAQDDG5?usp=drive_link) |
+|  COCO-Stuff  | DINO+**CAUSE-MLP** | ViT-B/8  |  34.3   |  72.8   |  [[link]](https://drive.google.com/file/d/1fmUs3UOsWVhOXvcbxjG9c-VT2vEaVzte/view?usp=drive_link)   | [[link]](https://drive.google.com/drive/folders/1Og2U2ihbPBrxpAAeWuped_FH4u_ecb0P?usp=drive_link) |[[link]](https://drive.google.com/drive/folders/10bZecU1EzgOISoi0RkajqSR-ebfAWr_N?usp=drive_link) | 
+|  COCO-Stuff  | DINO+**CAUSE-TR** | ViT-B/8   |  41.9   |  74.9   |  [[link]](https://drive.google.com/file/d/107jUAW4Y6xCMB7AgtgMIFcBitLMmQHaT/view?usp=drive_link)   | [[link]](https://drive.google.com/drive/folders/1Og2U2ihbPBrxpAAeWuped_FH4u_ecb0P?usp=drive_link) |[[link]](https://drive.google.com/drive/folders/10bZecU1EzgOISoi0RkajqSR-ebfAWr_N?usp=drive_link) |
+|  COCO-Stuff  | DINOv2+**CAUSE-TR** | ViT-B/14|  45.3   |  78.0   |  [[link]](https://drive.google.com/file/d/1e_Mub-u1EJOqzI7umk4BGgFApWukixmb/view?usp=drive_link)   | [[link]](https://drive.google.com/drive/folders/1CWMussJAvGulg94lUrNn3EooILbtgIOb?usp=drive_link) |[[link]](https://drive.google.com/drive/folders/1nBjBJnucRiBYFiJHeOJUuE5e1YSoYKaf?usp=drive_link) |
+|  COCO-Stuff  | iBOT+**CAUSE-TR** | ViT-B/16  |  39.5   |  73.8   |  [[link]](https://drive.google.com/file/d/1px6M068h3TH4wAxhH9sHSKrMZqreL9z2/view?usp=drive_link)   | [[link]](https://drive.google.com/drive/folders/1BAMopzQNU7cmiaCyFv73SBLj2F6gikuU?usp=drive_link) |[[link]](https://drive.google.com/drive/folders/1mbJdzpOrR-sjmAk0O1hnqzsStXDU3CL9?usp=drive_link) |
+|  COCO-Stuff  | MSN+**CAUSE-TR** | ViT-S/16   |  34.1   |  72.1   |  [[link]](https://drive.google.com/file/d/1R9KH3q9SxyitMzDGoKYQK4GkxuFMn7HQ/view?usp=drive_link)   | [[link]](https://drive.google.com/drive/folders/15F2aaVMbG40ISSXTL0f_UrVkX3UAFwZw?usp=drive_link) |[[link]](https://drive.google.com/drive/folders/19Mv7_5sM6e48eH80bAZSagXhO9CfEbCS?usp=drive_link) |
+|  COCO-Stuff  | MAE+**CAUSE-TR** | ViT-B/16   |  21.5   |  59.1   |  [[link]](https://drive.google.com/file/d/1_vwGG51DN5rJliDKUcc-9DKLbklroJw9/view?usp=drive_link)   | [[link]](https://drive.google.com/drive/folders/1ubUbmSliqrN19v6Abqsb_djtWDbx9qbV?usp=drive_link) |[[link]](https://drive.google.com/drive/folders/1G91qCJx-Z3IpYFYLFAUyG1zqMMZOhQWx?usp=drive_link) |
 
 
 
 ---
 
-|   Dataset    | Method        | Baseline   | mIoU(%) | pAcc(%) |  Visual Quality                                         |                                           Checkpoint                                           |
-|:------------:|---------------|------------|:-------:|:-------:|:---------------------------------------------------------------------------------------------:|:----------------------------------------------------------------------------------------------:|
-|  Cityscapes  | DINO+**CUSS** | ViT-S/8    |  20.4   |  85.3   | [[link]]()  | [[link]]() |
-|  Cityscapes  | DINO+**CUSS** | ViT-S/16   |  15.4   |  77.4   | [[link]]()  | [[link]]() |
-|  Cityscapes  | DINO+**CUSS** | ViT-B/8    |  23.0   |  86.9   | [[link]]()  | [[link]]() |
-|  Cityscapes  | DINO+**CUSS** | ViT-B/16   |  17.3   |  80.3   | [[link]]()  | [[link]]() |
-|  Cityscapes  | DINOv2+**CUSS** | ViT-S/14 |  27.3   |  63.8   |  [[link]]()   | [[link]]() |
-|  Cityscapes  | DINOv2+**CUSS** | ViT-B/14 |  28.8   |  67.4   |  [[link]]()   | [[link]]() |
-|  Cityscapes  | iBOT+**CUSS** | ViT-S/16 |  28.8   |  67.4   |  [[link]]()   | [[link]]() |
-|  Cityscapes  | iBOT+**CUSS** | ViT-B/16 |  28.8   |  67.4   |  [[link]]()   | [[link]]() |
-|  Cityscapes  | MSN+**CUSS** | ViT-S/16 |  28.8   |  67.4   |  [[link]]()   | [[link]]() |
-|  Cityscapes  | MAE+**CUSS** | ViT-B/16 |  28.8   |  67.4   |  [[link]]()   | [[link]]() |
-
-
+|   Dataset    | Method        | Baseline   | mIoU(%) | pAcc(%) |  Visual Quality                                         |                                           Parameter | Concept ClusterBook                                           |
+|:------------|---------------|------------|:-------:|:-------:|:---------------------------------------------------------------------------------------------:|:----------------------------------------------------------------------------------------------:|:----------------------------------------------------------------------------------------------:|
+|  Cityscapes  | DINO+**CAUSE-MLP** | ViT-S/8   |  21.7   |  87.7   | [[link]](https://drive.google.com/file/d/1sC7OltZGfXCCyPhEaHJ596mczBUMGiEr/view?usp=drive_link)  | [[link]](https://drive.google.com/drive/folders/1MT_HPyZvn09jEsvnlGci9ZLDB2e6h4PI?usp=drive_link) | [[link]](https://drive.google.com/drive/folders/1-ZfobyjlUGx5nltnBnjSzKzLQLTqcD_r?usp=drive_link) |
+|  Cityscapes  | DINO+**CAUSE-TR** | ViT-S/8    |  24.6   |  89.4   | [[link]](https://drive.google.com/file/d/1HEk9DSFHV0i-9SNqCDtmKhQUcPhSsu2P/view?usp=drive_link)  | [[link]](https://drive.google.com/drive/folders/1MT_HPyZvn09jEsvnlGci9ZLDB2e6h4PI?usp=drive_link) | [[link]](https://drive.google.com/drive/folders/1-ZfobyjlUGx5nltnBnjSzKzLQLTqcD_r?usp=drive_link) |
+|  Cityscapes  | DINO+**CAUSE-MLP** | ViT-B/8   |  25.7   |  90.3   | [[link]](https://drive.google.com/file/d/1T4urliZtG-mJgjr1k-AczlC7c6EmWovP/view?usp=drive_link)  | [[link]](https://drive.google.com/drive/folders/1Y7K3v_IUUn82rq5df6cQUagL_sNLZRdT?usp=drive_link) | [[link]](https://drive.google.com/drive/folders/1EoidRFHOT1w8LFNt2ws7C1BCkYdI4fw1?usp=drive_link) |
+|  Cityscapes  | DINO+**CAUSE-TR** | ViT-B/8    |  28.0   |  90.8   | [[link]](https://drive.google.com/file/d/1hQUT8jmzj9StBF_3QN87SL2_HO5n9yxp/view?usp=drive_link)  | [[link]](https://drive.google.com/drive/folders/1Y7K3v_IUUn82rq5df6cQUagL_sNLZRdT?usp=drive_link) | [[link]](https://drive.google.com/drive/folders/1EoidRFHOT1w8LFNt2ws7C1BCkYdI4fw1?usp=drive_link) |
+|  Cityscapes  | DINOv2+**CAUSE-TR** | ViT-B/14 |  29.9   |  89.8   | [[link]](https://drive.google.com/file/d/1SUKv38yrayooAVsW2VWLbg6iy64syWnV/view?usp=drive_link)  | [[link]](https://drive.google.com/drive/folders/1fi_DvMD3CLaZEozEgrGhIh6nH7WFq_Sj?usp=drive_link) | [[link]](https://drive.google.com/drive/folders/1t66yv8_otlAMwy-QQyff-6fiwP58kCvV?usp=drive_link) |
+|  Cityscapes  | iBOT+**CAUSE-TR** | ViT-B/16   |  23.0   |  89.1   | [[link]](https://drive.google.com/file/d/1ZDCr0k6WdmjWFw6J-S7Y6HFf88tGfEAO/view?usp=drive_link)  | [[link]](https://drive.google.com/drive/folders/1T9OqBTc9tw9h3zDzzi137l8ls29_uOrd?usp=drive_link) | [[link]](https://drive.google.com/drive/folders/1t4qsGMYlIWoArvkAFr-uUerkwQYPR5u7?usp=drive_link) |
+|  Cityscapes  | MSN+**CAUSE-TR** | ViT-S/16    |  21.2   |  89.1   | [[link]](https://drive.google.com/file/d/1-jSkmwRObBKOHdiMuu3eLaXWgQFMeida/view?usp=drive_link)  | [[link]](https://drive.google.com/drive/folders/1UQnhVADQvbnQKLjIXzEpY_hW76Yeeuuj?usp=drive_link) | [[link]](https://drive.google.com/drive/folders/1TLGaZjljYoVCFp4EjjOghtvczk-SzVR1?usp=drive_link) |
+|  Cityscapes  | MAE+**CAUSE-TR** | ViT-B/16    |  12.5   |  82.0   | [[link]](https://drive.google.com/file/d/1241UvEi0zc5JS88fga2rZCS4wkDuaE3c/view?usp=drive_link)  | [[link]](https://drive.google.com/drive/folders/1Ng9mVhzAipmY5aPzJkX35flqJIQ8rgIp?usp=drive_link) | [[link]](https://drive.google.com/drive/folders/1SFYWWo5Khqoy8fIhvxuL2XoZEaKt1UH-?usp=drive_link) |
 
 
 ---
 
-## CUSS Framework (Top-Level File Directory Layout) 
+|   Dataset    | Method        | Baseline   | mIoU(%) | pAcc(%) |  Visual Quality                                         |                                           Parameter  | Concept ClusterBook                                        |
+|:------------|---------------|------------|:-------:|:-------:|:---------------------------------------------------------------------------------------------:|:----------------------------------------------------------------------------------------------:|:----------------------------------------------------------------------------------------------:|
+|  Pascal VOC  | DINO+**CAUSE-MLP** | ViT-S/8    |  46.0   |  -      |  [[link]](https://drive.google.com/file/d/1nzZMGCqb7mYdSXN59xzMkQUitzjxJt-9/view?usp=drive_link)   | [[link]](https://drive.google.com/drive/folders/1o6AkLzqC1J-V4YB_S7BBhfGd2E6qdopO?usp=drive_link) | [[link]](https://drive.google.com/drive/folders/1H9dvIDaEW1fsIKsI1HPETD4NC2dj6Z6S?usp=drive_link) |
+|  Pascal VOC  | DINO+**CAUSE-TR**  | ViT-S/8    |  50.0   |  -      |  [[link]](https://drive.google.com/file/d/1Q-2ey069mDHnziGlP1olEc-JSHBf7t6N/view?usp=drive_link)   | [[link]](https://drive.google.com/drive/folders/1o6AkLzqC1J-V4YB_S7BBhfGd2E6qdopO?usp=drive_link) | [[link]](https://drive.google.com/drive/folders/1H9dvIDaEW1fsIKsI1HPETD4NC2dj6Z6S?usp=drive_link) |
+|  Pascal VOC  | DINO+**CAUSE-MLP** | ViT-B/8    |  47.9   |  -      |  [[link]](https://drive.google.com/file/d/1EWlKNbcWGSNXBhZpdezv3ghCcxItR-Zj/view?usp=drive_link)   | [[link]](https://drive.google.com/drive/folders/1sPlG9jQ-DljVguPNPDS1g3xnW_rTtUyw?usp=drive_link) | [[link]](https://drive.google.com/drive/folders/1zsTx1NOECcJ7DH1wa654wRH_NLV6FHWP?usp=drive_link) |
+|  Pascal VOC  | DINO+**CAUSE-TR**  | ViT-B/8    |  53.3   |  -      |  [[link]](https://drive.google.com/file/d/1pqJNoCpCz3wMMjIMxQJ-WOxtdwvsaJWM/view?usp=drive_link)   | [[link]](https://drive.google.com/drive/folders/1sPlG9jQ-DljVguPNPDS1g3xnW_rTtUyw?usp=drive_link) | [[link]](https://drive.google.com/drive/folders/1zsTx1NOECcJ7DH1wa654wRH_NLV6FHWP?usp=drive_link) |
+|  Pascal VOC  | DINOv2+**CAUSE-TR** | ViT-B/14  |  53.2   |  91.5   |  [[link]](https://drive.google.com/file/d/17FBfHfyML6jyeY5NvPJXUDI_vaxC87vk/view?usp=drive_link)   | [[link]](https://drive.google.com/drive/folders/1qsuKMVvpqsaYcVvZj3rDecmhZBAHOTeK?usp=drive_link) | [[link]](https://drive.google.com/drive/folders/1aGs3KSExQrdQytVFWigOGRs2yC3YLO12?usp=drive_link) |
+|  Pascal VOC  | iBOT+**CAUSE-TR** | ViT-B/16    |  53.4   |  89.6   |  [[link]](https://drive.google.com/file/d/1UjkvZ0MFxL-P0kaeUQKSGnVrjPsaeHaY/view?usp=drive_link)   | [[link]](https://drive.google.com/drive/folders/1G9zvKcLNbhAyqKlJXUpt80CR6MBtuSdi?usp=drive_link) | [[link]](https://drive.google.com/drive/folders/1zA9d5eo41GerRWuBOnHY6_AjhtjGETCy?usp=drive_link) |
+|  Pascal VOC  | MSN+**CAUSE-TR** | ViT-S/16     |  30.2   |  84.2   |  [[link]](https://drive.google.com/file/d/1by4USHNiEzem17s7jWKKUZTfUylQWyIy/view?usp=drive_link)   | [[link]](https://drive.google.com/drive/folders/1s6nzSmzt_ZTt_tCDvf8vmhU2RmE3Cdy0?usp=drive_link) | [[link]](https://drive.google.com/drive/folders/1bwLogZo3vJOJrpSanRpgZ_1WHTeB3e4q?usp=drive_link) |
+|  Pascal VOC  | MAE+**CAUSE-TR** | ViT-B/16     |  25.8   |  83.7   |  [[link]](https://drive.google.com/file/d/1odjO5dgTTdmsWGuGG7xFPi3ZLsV6-stl/view?usp=drive_link)   | [[link]](https://drive.google.com/drive/folders/1Re_f8QgIdXDnrNwP_5g-kFL-6SoE9YPU?usp=drive_link) | [[link]](https://drive.google.com/drive/folders/1wOVWzTnfH58My8PT8rXW0sw2oVdc4xkL?usp=drive_link) |
+
+
+---
+
+|   Dataset    | Method        | Baseline   | mIoU(%) | pAcc(%) |  Visual Quality                                         |                                           Parameter | Concept ClusterBook                                         |
+|:------------|---------------|------------|:-------:|:-------:|:---------------------------------------------------------------------------------------------:|:----------------------------------------------------------------------------------------------:|:----------------------------------------------------------------------------------------------:|
+|  COCO-81   | DINO+**CAUSE-MLP**  | ViT-S/8   |  19.1   |  78.8   | [[link]](https://drive.google.com/file/d/1Glxb7DHHhjxPQjkGygQM2prak7oH8dTt/view?usp=drive_link)  | [[link]](https://drive.google.com/drive/folders/1SlQ1_3phGBvjaxizjcYD92Nglab7RV6k?usp=drive_link) | [[link]](https://drive.google.com/drive/folders/1ON5vDLS_Wc5OGgTxVK_yFopQGHbKaOar?usp=drive_link) |
+|  COCO-81   | DINO+**CAUSE-TR**   | ViT-S/8   |  21.2   |  75.2   | [[link]](https://drive.google.com/file/d/1QJmkV57mhKx6_A0E-yQcrQifX8lMRspO/view?usp=drive_link)  | [[link]](https://drive.google.com/drive/folders/1SlQ1_3phGBvjaxizjcYD92Nglab7RV6k?usp=drive_link) | [[link]](https://drive.google.com/drive/folders/1ON5vDLS_Wc5OGgTxVK_yFopQGHbKaOar?usp=drive_link) |
+|  COCO-171  | DINO+**CAUSE-MLP** | ViT-S/8    |  10.6   |  44.9   | [[link]](https://drive.google.com/file/d/1EUDqFTHVlr2c8cIR9oTbjpS83Js6RW66/view?usp=drive_link)  | [[link]](https://drive.google.com/drive/folders/1SlQ1_3phGBvjaxizjcYD92Nglab7RV6k?usp=drive_link) | [[link]](https://drive.google.com/drive/folders/1ON5vDLS_Wc5OGgTxVK_yFopQGHbKaOar?usp=drive_link) |
+|  COCO-171  | DINO+**CAUSE-TR**  | ViT-S/8    |  15.2   |  46.6   | [[link]](https://drive.google.com/file/d/1Gv6306XUb-rbWB980O5m5vxQeZKIModT/view?usp=drive_link)  | [[link]](https://drive.google.com/drive/folders/1SlQ1_3phGBvjaxizjcYD92Nglab7RV6k?usp=drive_link) | [[link]](https://drive.google.com/drive/folders/1ON5vDLS_Wc5OGgTxVK_yFopQGHbKaOar?usp=drive_link) |
+
+
+---
+
+## CAUSE Framework (Top-Level File Directory Layout) 
     .
     ├── loader
     │   ├── netloader.py                # Self-Supervised Pretrained Model Loader & Segmentation Head Loader
@@ -105,7 +127,7 @@ you can download them in the following links:
 
 
 ---
-## How to Run CUSS?
+## How to Run CAUSE?
 
 
 ```shell bash
@@ -133,7 +155,7 @@ python train_front_door_tr.py --dataset $dataset --ckpt $ckpt --gpu $train_gpu -
 ```
 
 
-### 1. Training CUSS
+### 1. Training CAUSE
 
 ### (STEP 1): Generating Mediator based on Modularity
 
@@ -160,7 +182,7 @@ python fine_tuning_tr.py # TR
 
 ---
 
-### 2. Testing CUSS
+### 2. Testing Cause
 
 ```shell script
 python test_mlp.py # MLP

@@ -276,7 +276,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     
     # model parameter
-    parser.add_argument('--NAME-TAG', default='CUSS-TR', type=str)
+    parser.add_argument('--NAME-TAG', default='CAUSE-TR', type=str)
     parser.add_argument('--data_dir', default='/mnt/hard2/lbk-iccv/datasets', type=str)
     parser.add_argument('--dataset', default='pascalvoc', type=str)
     parser.add_argument('--port', default='12355', type=str)

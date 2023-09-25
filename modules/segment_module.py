@@ -6,7 +6,7 @@ import torch.nn.functional as F
 from torch import randperm as perm
 
 """
-Below are Classes for CUSS
+Below are Classes for CAUSE
 """
 
 class HeadSegment(nn.Module):

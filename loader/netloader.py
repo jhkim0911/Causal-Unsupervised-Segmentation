@@ -17,7 +17,7 @@ def cluster_mlp_loader(args, rank):
 
     if args.load_cluster:
         baseline = args.ckpt.split('/')[-1].split('.')[0]
-        y = f'CUSS/{args.dataset}/{baseline}/{args.num_codebook}/cluster_mlp.pth'
+        y = f'CAUSE/{args.dataset}/{baseline}/{args.num_codebook}/cluster_mlp.pth'
         cluster.load_state_dict(torch.load(y, map_location=f'cuda:{rank}'), strict=False)
         rprint(f'[Cluster] {y} loaded', rank)
 
@@ -31,7 +31,7 @@ def cluster_tr_loader(args, rank):
 
     if args.load_cluster:
         baseline = args.ckpt.split('/')[-1].split('.')[0]
-        y = f'CUSS/{args.dataset}/{baseline}/{args.num_codebook}/cluster_tr.pth'
+        y = f'CAUSE/{args.dataset}/{baseline}/{args.num_codebook}/cluster_tr.pth'
         cluster.load_state_dict(torch.load(y, map_location=f'cuda:{rank}'), strict=False)
         rprint(f'[Cluster] {y} loaded', rank)
 
@@ -44,7 +44,7 @@ def segment_mlp_loader(args, rank=0):
 
     if args.load_segment:
         baseline = args.ckpt.split('/')[-1].split('.')[0]
-        y = f'CUSS/{args.dataset}/{baseline}/{args.num_codebook}/segment_mlp.pth'
+        y = f'CAUSE/{args.dataset}/{baseline}/{args.num_codebook}/segment_mlp.pth'
         segment.load_state_dict(torch.load(y, map_location=f'cuda:{rank}'), strict=False)
         rprint(f'[Segment] {y} loaded', rank)
 
@@ -58,7 +58,7 @@ def segment_tr_loader(args, rank=0):
 
     if args.load_segment:
         baseline = args.ckpt.split('/')[-1].split('.')[0]
-        y = f'CUSS/{args.dataset}/{baseline}/{args.num_codebook}/segment_tr.pth'
+        y = f'CAUSE/{args.dataset}/{baseline}/{args.num_codebook}/segment_tr.pth'
         segment.load_state_dict(torch.load(y, map_location=f'cuda:{rank}'), strict=False)
         rprint(f'[Segment] {y} loaded', rank)
 

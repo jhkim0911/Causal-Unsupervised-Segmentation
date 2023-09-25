@@ -293,10 +293,10 @@ def main(rank, args, ngpus_per_node):
             baseline = args.ckpt.split('/')[-1].split('.')[0]
 
             # filepath hierarchy
-            check_dir(f'CUSS/{args.dataset}/{baseline}/{args.num_codebook}')
+            check_dir(f'CAUSE/{args.dataset}/{baseline}/{args.num_codebook}')
 
             # save path
-            y = f'CUSS/{args.dataset}/{baseline}/{args.num_codebook}/segment_tr.pth'
+            y = f'CAUSE/{args.dataset}/{baseline}/{args.num_codebook}/segment_tr.pth'
             torch.save(x, y)
             print(f'-----------------TEST Epoch {epoch}: SAVING CHECKPOINT IN {y}-----------------')
 
@@ -312,7 +312,7 @@ if __name__ == "__main__":
     # fetch args
     parser = argparse.ArgumentParser()
     # model parameter
-    parser.add_argument('--NAME-TAG', default='CUSS-TR', type=str)
+    parser.add_argument('--NAME-TAG', default='CAUSE-TR', type=str)
     parser.add_argument('--data_dir', default='/mnt/hard2/lbk-iccv/datasets', type=str)
     parser.add_argument('--dataset', default='cocostuff27', type=str)
     parser.add_argument('--ckpt', default='checkpoint/dino_vit_small_8.pth', type=str)

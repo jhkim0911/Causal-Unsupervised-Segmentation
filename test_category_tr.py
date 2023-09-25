@@ -115,9 +115,9 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     
     # model parameter
-    parser.add_argument('--NAME-TAG', default='CUSS-TR', type=str)
+    parser.add_argument('--NAME-TAG', default='CAUSE-TR', type=str)
     parser.add_argument('--data_dir', default='/mnt/hard2/lbk-iccv/datasets', type=str)
-    parser.add_argument('--dataset', default='cocostuff27', type=str)
+    parser.add_argument('--dataset', default='pascalvoc', type=str)
     parser.add_argument('--port', default='12355', type=str)
     parser.add_argument('--ckpt', default='checkpoint/dino_vit_base_8.pth', type=str)
     parser.add_argument('--distributed', default=False, type=str2bool)

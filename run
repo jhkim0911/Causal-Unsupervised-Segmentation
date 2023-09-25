@@ -72,7 +72,7 @@ python train_mediator.py --epoch 1 --dataset $dataset --ckpt $ckpt --gpu $train_
 ######################################
 
 ######################################
-# [STEP2] CUSS
+# [STEP2] CAUSE
 if [ "$structure" = "MLP" ]
 then 
     python fine_tuning_mlp.py --dataset $dataset --epoch 1 --ckpt $ckpt --gpu $train_gpu --port $port --reduced_dim $reduced_dim
@@ -94,7 +94,7 @@ fi
 ######################################
 
 ######################################
-# [OPTION] CUSS-MLP
+# [OPTION] CAUSE-MLP
 # python train_front_door_mlp.py --dataset $dataset --ckpt $ckpt --gpu $train_gpu --port $port --reduced_dim $reduced_dim && python fine_tuning_mlp.py --dataset $dataset --epoch 1 --ckpt $ckpt --gpu $train_gpu --port $port && python test_mlp.py --dataset $dataset --ckpt $ckpt --gpu $test_gpu --reduced_dim $reduced_dim
 # python train_front_door_tr.py --dataset $dataset --ckpt $ckpt --gpu $train_gpu --port $port && python fine_tuning_tr.py --epoch 5 --dataset $dataset --ckpt $ckpt --gpu $train_gpu --port $port && python test_tr.py --dataset $dataset --ckpt $ckpt --gpu $test_gpu
 ######################################
