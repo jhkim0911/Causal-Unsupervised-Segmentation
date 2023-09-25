@@ -35,9 +35,8 @@ you can download them in the following links:
 
 ---
 
-`$var = "LYNMP";`
 
-|   Dataset    | Method        | Baseline   | mIoU(%) | pAcc(%) |  Visual Quality                                         |                                           Parameter | Concept ClusterBook |
+|   Dataset    | Method        | Baseline   | mIoU(%) | pAcc(%) |  Visual Quality                                         |                                           Seg Head Parameter | Concept ClusterBook |
 |:------------|---------------|------------|:-------:|:-------:|:---------------------------------------------------------------------------------------------:|:----------------------------------------------------------------------------------------------:|:----------------------------------------------------------------------------------------------:|
 |  COCO-Stuff  | DINO+**CAUSE-MLP** | ViT-S/8  |  27.9   |  66.8   |  [[link]](https://drive.google.com/file/d/1Z0Zj9JWJQQk6qeRctcdAk9MfyZQCwkvW/view?usp=drive_link)   | [[link]](https://drive.google.com/drive/folders/1ByLMYly-lLAa4vBQZ8Sv8nLSWBLPbev-?usp=drive_link) | [[link]](https://drive.google.com/drive/folders/14bq-B4Xj4V3Usl2b2SfobCOaap4lzIXl?usp=drive_link) |
 |  COCO-Stuff  | DINO+**CAUSE-TR** | ViT-S/8   |  32.4   |  69.6   |  [[link]](https://drive.google.com/file/d/1x9LNwCiXtZel-fTh8TqtRgHmmmrIFPgg/view?usp=drive_link)   | [[link]](https://drive.google.com/drive/folders/1ByLMYly-lLAa4vBQZ8Sv8nLSWBLPbev-?usp=drive_link) | [[link]](https://drive.google.com/drive/folders/14bq-B4Xj4V3Usl2b2SfobCOaap4lzIXl?usp=drive_link) |
@@ -54,7 +53,7 @@ you can download them in the following links:
 
 ---
 
-|   Dataset    | Method        | Baseline   | mIoU(%) | pAcc(%) |  Visual Quality                                         |                                           Parameter | Concept ClusterBook                                           |
+|   Dataset    | Method        | Baseline   | mIoU(%) | pAcc(%) |  Visual Quality                                         |                                          Seg Head Parameter | Concept ClusterBook                                           |
 |:------------|---------------|------------|:-------:|:-------:|:---------------------------------------------------------------------------------------------:|:----------------------------------------------------------------------------------------------:|:----------------------------------------------------------------------------------------------:|
 |  Cityscapes  | DINO+**CAUSE-MLP** | ViT-S/8   |  21.7   |  87.7   | [[link]](https://drive.google.com/file/d/1sC7OltZGfXCCyPhEaHJ596mczBUMGiEr/view?usp=drive_link)  | [[link]](https://drive.google.com/drive/folders/1MT_HPyZvn09jEsvnlGci9ZLDB2e6h4PI?usp=drive_link) | [[link]](https://drive.google.com/drive/folders/1-ZfobyjlUGx5nltnBnjSzKzLQLTqcD_r?usp=drive_link) |
 |  Cityscapes  | DINO+**CAUSE-TR** | ViT-S/8    |  24.6   |  89.4   | [[link]](https://drive.google.com/file/d/1HEk9DSFHV0i-9SNqCDtmKhQUcPhSsu2P/view?usp=drive_link)  | [[link]](https://drive.google.com/drive/folders/1MT_HPyZvn09jEsvnlGci9ZLDB2e6h4PI?usp=drive_link) | [[link]](https://drive.google.com/drive/folders/1-ZfobyjlUGx5nltnBnjSzKzLQLTqcD_r?usp=drive_link) |
@@ -68,7 +67,7 @@ you can download them in the following links:
 
 ---
 
-|   Dataset    | Method        | Baseline   | mIoU(%) | pAcc(%) |  Visual Quality                                         |                                           Parameter  | Concept ClusterBook                                        |
+|   Dataset    | Method        | Baseline   | mIoU(%) | pAcc(%) |  Visual Quality                                         |                                          Seg Head Parameter  | Concept ClusterBook                                        |
 |:------------|---------------|------------|:-------:|:-------:|:---------------------------------------------------------------------------------------------:|:----------------------------------------------------------------------------------------------:|:----------------------------------------------------------------------------------------------:|
 |  Pascal VOC  | DINO+**CAUSE-MLP** | ViT-S/8    |  46.0   |  -      |  [[link]](https://drive.google.com/file/d/1nzZMGCqb7mYdSXN59xzMkQUitzjxJt-9/view?usp=drive_link)   | [[link]](https://drive.google.com/drive/folders/1o6AkLzqC1J-V4YB_S7BBhfGd2E6qdopO?usp=drive_link) | [[link]](https://drive.google.com/drive/folders/1H9dvIDaEW1fsIKsI1HPETD4NC2dj6Z6S?usp=drive_link) |
 |  Pascal VOC  | DINO+**CAUSE-TR**  | ViT-S/8    |  50.0   |  -      |  [[link]](https://drive.google.com/file/d/1Q-2ey069mDHnziGlP1olEc-JSHBf7t6N/view?usp=drive_link)   | [[link]](https://drive.google.com/drive/folders/1o6AkLzqC1J-V4YB_S7BBhfGd2E6qdopO?usp=drive_link) | [[link]](https://drive.google.com/drive/folders/1H9dvIDaEW1fsIKsI1HPETD4NC2dj6Z6S?usp=drive_link) |
@@ -82,7 +81,7 @@ you can download them in the following links:
 
 ---
 
-|   Dataset    | Method        | Baseline   | mIoU(%) | pAcc(%) |  Visual Quality                                         |                                           Parameter | Concept ClusterBook                                         |
+|   Dataset    | Method        | Baseline   | mIoU(%) | pAcc(%) |  Visual Quality                                         |                                          Seg Head Parameter | Concept ClusterBook                                         |
 |:------------|---------------|------------|:-------:|:-------:|:---------------------------------------------------------------------------------------------:|:----------------------------------------------------------------------------------------------:|:----------------------------------------------------------------------------------------------:|
 |  COCO-81   | DINO+**CAUSE-MLP**  | ViT-S/8   |  19.1   |  78.8   | [[link]](https://drive.google.com/file/d/1Glxb7DHHhjxPQjkGygQM2prak7oH8dTt/view?usp=drive_link)  | [[link]](https://drive.google.com/drive/folders/1SlQ1_3phGBvjaxizjcYD92Nglab7RV6k?usp=drive_link) | [[link]](https://drive.google.com/drive/folders/1ON5vDLS_Wc5OGgTxVK_yFopQGHbKaOar?usp=drive_link) |
 |  COCO-81   | DINO+**CAUSE-TR**   | ViT-S/8   |  21.2   |  75.2   | [[link]](https://drive.google.com/file/d/1QJmkV57mhKx6_A0E-yQcrQifX8lMRspO/view?usp=drive_link)  | [[link]](https://drive.google.com/drive/folders/1SlQ1_3phGBvjaxizjcYD92Nglab7RV6k?usp=drive_link) | [[link]](https://drive.google.com/drive/folders/1ON5vDLS_Wc5OGgTxVK_yFopQGHbKaOar?usp=drive_link) |
