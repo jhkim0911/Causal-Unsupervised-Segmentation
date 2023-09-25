@@ -4,23 +4,18 @@
 
 # cocostuff27
 # dataset="cocostuff27"
-# reduced_dim=90
 
 # cityscapes
 # dataset="cityscapes"
-# reduced_dim=90
 
 # pascalvoc
 # dataset="pascalvoc"
-# reduced_dim=90
 
 # coco-81
 dataset="coco81"
-reduced_dim=90
 
 # coco-171
 # dataset="coco171"
-# reduced_dim=90
 ######################################
 
 ######################################
@@ -68,17 +63,19 @@ port=$(($RANDOM%800+1200))
 
 ######################################
 # [STEP1] MEDIATOR
-python train_mediator.py --epoch 1 --dataset $dataset --ckpt $ckpt --gpu $train_gpu --port $port
+python train_mediator.py --dataset $dataset --ckpt $ckpt --gpu $train_gpu --port $port
 ######################################
 
 ######################################
 # [STEP2] CAUSE
 if [ "$structure" = "MLP" ]
 then 
-    python fine_tuning_mlp.py --dataset $dataset --epoch 1 --ckpt $ckpt --gpu $train_gpu --port $port --reduced_dim $reduced_dim
+    python train_front_door_mlp.py --dataset $dataset --ckpt $ckpt --gpu $train_gpu --port $port
+    python fine_tuning_mlp.py --dataset $dataset --ckpt $ckpt --gpu $train_gpu --port $port
 elif [ "$structure" = "TR" ]
-then 
-    python fine_tuning_tr.py --epoch 5 --dataset $dataset --ckpt $ckpt --gpu $train_gpu --port $port --reduced_dim $reduced_dim
+then
+    python train_front_door_tr.py --dataset $dataset --ckpt $ckpt --gpu $train_gpu --port $port 
+    python fine_tuning_tr.py --dataset $dataset --ckpt $ckpt --gpu $train_gpu --port $port
 fi
 ######################################
 
@@ -86,21 +83,9 @@ fi
 # TEST
 if [ "$structure" = "MLP" ]
 then 
-    python test_mlp.py --dataset $dataset --ckpt $ckpt --gpu $test_gpu --reduced_dim $reduced_dim
+    python test_mlp.py --dataset $dataset --ckpt $ckpt --gpu $test_gpu
 elif [ "$structure" = "TR" ]
 then 
-    python test_tr.py --dataset $dataset --ckpt $ckpt --gpu $test_gpu --reduced_dim $reduced_dim
+    python test_tr.py --dataset $dataset --ckpt $ckpt --gpu $test_gpu
 fi
-######################################
-
-######################################
-# [OPTION] CAUSE-MLP
-# python train_front_door_mlp.py --dataset $dataset --ckpt $ckpt --gpu $train_gpu --port $port --reduced_dim $reduced_dim && python fine_tuning_mlp.py --dataset $dataset --epoch 1 --ckpt $ckpt --gpu $train_gpu --port $port && python test_mlp.py --dataset $dataset --ckpt $ckpt --gpu $test_gpu --reduced_dim $reduced_dim
-# python train_front_door_tr.py --dataset $dataset --ckpt $ckpt --gpu $train_gpu --port $port && python fine_tuning_tr.py --epoch 5 --dataset $dataset --ckpt $ckpt --gpu $train_gpu --port $port && python test_tr.py --dataset $dataset --ckpt $ckpt --gpu $test_gpu
-######################################
-
-######################################
-# [OPTION] LINEAR PROBING
-# python linear_probing_mlp.py --epoch 5 --dataset $dataset --ckpt $ckpt --gpu $train_gpu --port $port --reduced_dim $reduced_dim
-# python linear_probing_tr.py --epoch 5 --dataset $dataset --ckpt $ckpt --gpu $train_gpu --port $port --reduced_dim $reduced_dim
 ######################################

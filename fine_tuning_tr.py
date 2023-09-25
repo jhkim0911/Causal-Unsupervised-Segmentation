@@ -277,11 +277,11 @@ if __name__ == "__main__":
     # model parameter
     parser.add_argument('--NAME-TAG', default='CAUSE-TR', type=str)
     parser.add_argument('--data_dir', default='/mnt/hard2/lbk-iccv/datasets/', type=str)
-    parser.add_argument('--dataset', default='coco81', type=str)
-    parser.add_argument('--ckpt', default='checkpoint/dino_vit_small_8.pth', type=str)
+    parser.add_argument('--dataset', default='cocostuff27', type=str)
+    parser.add_argument('--ckpt', default='checkpoint/dino_vit_base_8.pth', type=str)
     parser.add_argument('--epoch', default=5, type=int)
     parser.add_argument('--distributed', default=True, type=str2bool)
-    parser.add_argument('--load_segment', default=False, type=str2bool)
+    parser.add_argument('--load_segment', default=True, type=str2bool)
     parser.add_argument('--load_cluster', default=False, type=str2bool)
     parser.add_argument('--train_resolution', default=320, type=int)
     parser.add_argument('--test_resolution', default=320, type=int)
@@ -289,7 +289,7 @@ if __name__ == "__main__":
     parser.add_argument('--num_workers', default=int(os.cpu_count() / 8), type=int)
 
     # DDP
-    parser.add_argument('--gpu', default='4,5,6,7', type=str)
+    parser.add_argument('--gpu', default='0,1,2,3', type=str)
     parser.add_argument('--port', default='12355', type=str)
     
     # codebook parameter
