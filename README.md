@@ -212,6 +212,9 @@ python test_tr.py # TR
 ### Available Datasets
 * [COCO-Stuff](https://paperswithcode.com/dataset/coco-stuff)
 * [Cityscapes](https://paperswithcode.com/dataset/cityscapes)
+* [Pascal VOC](http://host.robots.ox.ac.uk/pascal/VOC/voc2012/index.html)
+
+*Note: Pascal VOC is not necessary to download because dataloader will automatically download in your own dataset path*
 
 ### Try the following scripts
 > * wget https://marhamilresearch4.blob.core.windows.net/stego-public/pytorch_data/cityscapes.zip
