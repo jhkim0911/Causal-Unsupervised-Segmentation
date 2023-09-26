@@ -1,7 +1,6 @@
 import torch
 import torch.nn as nn
-from modules.segment_module import Decoder, ProjectionSegment
-from modules.segment_module import HeadSegment, ProjectionSegment
+from modules.segment_module import HeadSegment, Decoder, ProjectionSegment
 
 class Segment_MLP(nn.Module):
     def __init__(self, args):
